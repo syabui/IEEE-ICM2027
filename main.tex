@@ -110,15 +110,19 @@ feedback: seek controller during the trajectory, switched to the following
 controller with disturbance-rejection filters 0.3~ms after the trajectory ends.
 Feedforward: polynomial trajectory FF.}
 
-\todo{State the number of disturbance-rejection filters in the following
-controller used for the results (handover says 13 for FB v2; the MATLAB design
-tool gives 12). All of them are loop-shaped.}
+\note{Following controller: 13 disturbance-rejection filters (12 placed by
+the design procedure \cite{atsumi2026amc} plus one peak-shaping filter), all
+loop-shaped under constraints on the sensitivity function and the closed-loop
+poles; worst-case $3\sigma$ of 4.45~nm. Eleven of them are narrow-band
+($\zeta_a \le 0.05$) and equivalent to the AFC of
+\eqref{eq:afc_out}--\eqref{eq:afc_update}; the methods below apply to these
+eleven. None of them is designed by the Kalman formulas of Section~III.}
 
 \begin{figure}[tb]
 \centering
 \figplaceholder{Block diagram of the mode-switching dual-stage control
 system with AFC}
-\caption{Control system. \todo{draw}}
+\caption{Control system. \todo{draw: mode-switching dual-stage loop with the loop-shaped AFCs. The draft fig\_block\_kalman\_afc.png shows a Kalman-designed AFC and does not match the paper.}}
 \label{fig:block}
 \end{figure}
 
@@ -152,8 +156,9 @@ and the forgetting factor.
 \note{Equivalent to a resonant filter with damping $\zeta_a$
 \cite{bodson1994,yabui_thesis}. Add direct term $n_0$ if space allows.}
 
-\note{Conventional handling during seek: \emph{gate} (input set to zero, so
-$\thc \leftarrow \eta\,\thc$) or \emph{reset} ($\thc = 0$). Evaluation index:
+\note{Existing handling during seek: \emph{reset} ($\thc = 0$ at seek start,
+re-learned after mode switching) or \emph{gate} (input set to zero, so the
+state decays with its own forgetting factor, $\thc \leftarrow \eta\,\thc$). Evaluation index:
 write-ready time $t_\mathrm{ready}$ = first time the PES stays within
 $\pm 0.1$~track for 0.5~ms, measured from seek start. Disturbance-free settling
 time $t_\mathrm{hold}$ and $\max|u_{cp}| < 50$~nm must not be degraded.}
@@ -265,7 +270,9 @@ $\thc \leftarrow \etad\,\thc$ (\emph{predict}); normalized error grows as
 $e(N) = \etad^{2N}e_0 + (1-\etad^{2N})$. Gating a loop-shaped AFC instead
 applies $\eta^{N}$: at 6.66~kHz the state shrinks to 0.27 after 0.84~ms,
 whereas the correlation of the disturbance supports $\etad^{N} = 0.76$.
-Gate is therefore close to reset. If $\eta = \etad$, gate equals predict.}
+Gate is therefore close to reset. If $\eta = \etad$, gate equals predict;
+in the controller used here $\eta \neq \etad$ for all eleven AFCs, and the
+difference between gate and predict comes only from this.}
 
 \subsection{Shadow AFC: Separating Estimation From Actuation}
 \note{Motivation in one sentence: closing the AFC loop during seek uses the
@@ -273,8 +280,15 @@ measurement but interacts with residual vibration and model error
 (disturbance-free settling at span 256 degraded from 0.665 to 1.364~ms), so
 estimation and actuation are separated.}
 
-During seek the plant is driven by the predicted value $\thc$, while a shadow
-state $\thch$ keeps learning from the corrected input
+During seek the input of the actual AFC is gated and its state follows the
+time update of the disturbance model,
+\begin{equation}
+\thc(k+1) = \etad\,\thc(k),
+\label{eq:predict}
+\end{equation}
+so that the plant is driven by the predicted value. In parallel, a shadow state
+$\thch$, which is not applied to the plant, keeps learning with the update law
+of the AFC itself from the corrected input
 \begin{equation}
 x_\mathrm{eff}(k) = x(k) + \re\{G_s(\thch(k) - \thc(k))e^{j\Omega k}\},
 \label{eq:xeff}
@@ -288,16 +302,25 @@ where $G_s$ is the loop with the seek controller, and
 $\lambda_s = \lambda\,|G_f/G_s|$, $\theta_s = \theta - \arg(G_f/G_s)$ convert
 the parameters designed for the following loop $G_f$. At mode switching the
 estimate is handed over, $\thc \leftarrow \thch$.
-\todo{Confirm which forgetting factor is used in \eqref{eq:shadow} and for the
-output during seek ($\eta$ of the filter or $\etad$).}
-\note{Since the output before switching equals that of predict, $t_\mathrm{hold}$
-and $\max|u_{cp}|$ are unchanged by construction.}
+\note{Two forgetting factors, do not mix: the output path \eqref{eq:predict}
+uses $\etad$ of the disturbance model; the shadow estimator \eqref{eq:shadow}
+uses $\eta$ of the AFC, i.e.\ it is the same estimator as in track following,
+converted to the seek loop and kept connected to the measurement. The term
+added in \eqref{eq:xeff} restores what the input would have been if $\thch$
+had been applied.}
+\note{Claim, stated precisely: the output before mode switching equals that of
+predict, so the disturbance-free response is unchanged \emph{up to the
+switching instant}. After the hand-over the estimate may contain a component
+learned from model error during the seek; $\gamma_s$ reduces it but not to
+zero (Section~V-C).}
 
 \begin{figure}[tb]
 \centering
-\figplaceholder{Structure of the shadow AFC (output path, shadow
-estimator, hand-over at mode switching)}
-\caption{Shadow AFC. \todo{draw}}
+\includegraphics[width=\columnwidth]{figs/fig_block_shadow_seek.png}
+\caption{Actual AFC (prediction only) and shadow AFC (estimation only) during
+seek. \todo{draft figure: move the bottom text to this caption, correct
+``disturbance-free seek is unchanged'' to ``unchanged up to the mode switch'',
+replace by the PDF version.}}
 \label{fig:shadow}
 \end{figure}
 
@@ -313,9 +336,11 @@ Z = \sum_{k=0}^{N_s-1} \eta^{N_s-1-k}\, x(k)\, e^{-j\Omega k},
 \end{equation}
 \note{$Z_\mathrm{det}$: disturbance-free seek over a set $U$ of 12 perturbed
 plants; $Z_\mathrm{dist}$: nominal plant with disturbance only (200 sequences).
-Example values of $\gamma_s$ (span 64): 0.90 at 6.66~kHz, 0.48 at 5.85~kHz,
-0.06 at 3.3~kHz. \todo{these example values are for MPC FF; recompute for
-polynomial FF or state the condition.}}
+Example values of $\gamma_s$ (span 64, polynomial FF): 0.70 at 6.66~kHz,
+0.50 at 5.85~kHz, 0.05 at 3.3~kHz, 0.007 at 2.2~kHz. Modes on the VCM side
+that are sensitive to model error get $\gamma_s \approx 0$, i.e.\ they reduce
+to predict. $\gamma_s$ depends on the FF because the deterministic residual
+during seek does.}
 
 % ===========================================================================
 \section{Simulation}
@@ -324,53 +349,84 @@ polynomial FF or state the condition.}}
 
 \subsection{Conditions}
 \note{Benchmark plant, disturbance (RV + 13 fan modes + RRO) and evaluation
-unchanged. 1000 disturbance sequences; $\gamma_s$ computed from a separate set
-of 200 sequences. The same sequences are used for all methods (paired
-comparison). Methods: Conventional (gate), Reset, Predict, Shadow AFC
-(proposed).}
+unchanged. Polynomial FF. Seven seek spans (4--1024 tracks), LT/RT/HT.
+1000 disturbance sequences; $\gamma_s$ computed from a separate set of 200
+sequences. The same sequences are used for all methods (paired comparison).
+Methods: No filters, Reset, Gate, Predict, Shadow AFC (proposed).}
 
 \subsection{Write-Ready Time}
 \begin{table}[tb]
-\caption{90th Percentile of Write-Ready Time [ms] (Polynomial FF, 1000
-Sequences): Conventional $\rightarrow$ Proposed}
+\caption{Results With Polynomial FF (1000 Sequences, Worst of LT/RT/HT)}
 \label{tab:tready}
 \centering
-\begin{tabular}{cccc}
+\footnotesize
+\setlength{\tabcolsep}{3.2pt}
+\begin{tabular}{lccccccc}
 \toprule
-Span & LT & RT & HT \\
+Span [track] & 4 & 16 & 64 & 128 & 256 & 512 & 1024 \\
 \midrule
-4    & 0.692 $\rightarrow$ 0.657 & 0.577 $\rightarrow$ 0.520 & 0.591 $\rightarrow$ 0.569 \\
-64   & 1.018 $\rightarrow$ 1.004 & 0.867 $\rightarrow$ 0.836 & 1.097 $\rightarrow$ 0.954 \\
-256  & 1.144 $\rightarrow$ 1.099 & 1.024 $\rightarrow$ 0.965 & 1.174 $\rightarrow$ 1.065 \\
-1024 & 1.525 $\rightarrow$ 1.476 & 1.470 $\rightarrow$ 1.444 & 1.700 $\rightarrow$ 1.569 \\
+\multicolumn{8}{l}{\textit{90th percentile of $t_\mathrm{ready}$ [ms]}}\\
+No filters & 1.431 & 2.494 & 3.340 & 5.105 & 2.298 & 2.870 & 3.298 \\
+Reset      & 0.857 & 1.219 & 1.182 & 1.699 & 1.303 & 1.570 & 1.719 \\
+Gate       & 0.692 & 1.058 & 1.097 & 1.615 & 1.174 & 1.423 & 1.700 \\
+Predict    & 0.658 & 1.047 & 1.095 & 1.610 & 1.135 & 1.374 & 1.691 \\
+Shadow     & \textbf{0.657} & \textbf{1.031} & \textbf{1.004} & \textbf{1.592} & \textbf{1.099} & \textbf{1.313} & \textbf{1.569} \\
+\midrule
+\multicolumn{8}{l}{\textit{$3\sigma$ of PES for 1 ms after mode switching [nm]}}\\
+No filters & 8.18 & 9.28 & 9.39 & 11.03 & 8.40 & 9.02 & 8.91 \\
+Reset      & 6.49 & 7.03 & 7.31 & 8.84 & 6.34 & 6.66 & 6.82 \\
+Gate       & 5.92 & 6.62 & 6.97 & 8.59 & 5.90 & 6.24 & 6.43 \\
+Predict    & 5.87 & 6.57 & 6.93 & 8.56 & 5.80 & 6.14 & 6.38 \\
+Shadow     & \textbf{5.62} & \textbf{6.55} & \textbf{6.66} & \textbf{8.34} & \textbf{5.64} & \textbf{6.03} & \textbf{6.16} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\note{Proposed is equal or shorter in all 12 conditions. 99th percentile:
-span 1024 HT $2.204 \rightarrow 1.858$~ms, span 4 RT $1.006 \rightarrow
-0.779$~ms. Paired comparison: difference below 0.05~ms in 65--85\% of the
-sequences; when it differs the proposed method wins two to three times as
-often. Reset is slower than Conventional in all conditions (e.g.\ span 64 HT:
-1.182~ms).}
+\note{$t_\mathrm{ready}$ (90th percentile): Shadow is the shortest of the five
+methods at all seven spans; $-6$ to $-23\%$ vs.\ Reset, $-1$ to $-8\%$ vs.\
+Gate, $-52$ to $-70\%$ vs.\ No filters. $3\sigma$ after switching: $-6$ to
+$-13\%$ vs.\ Reset. The order Reset $>$ Gate $>$ Predict $>$ Shadow follows
+the amount of information kept: nothing, decay with $\eta$, time update with
+$\etad$, time update plus measurement update.}
 
-\todo{Results for Predict and the excess-error index with polynomial FF are
-not in the handover (only MPC FF). Needed to show the step
-gate $\rightarrow$ predict $\rightarrow$ shadow.}
+\todo{Decide whether Gate and Predict stay in Table~\ref{tab:tready}. They are
+kept in this draft because Section~IV argues through gate vs.\ predict and
+because Gate is the stronger existing baseline.}
 
-\begin{figure}[tb]
+\todo{Excess-error index (integral of $\sigma^2-\sigma_{ss}^2$ up to 6~ms):
+$-45$ to $-62\%$ vs.\ Reset, $-10$ to $-16\%$ vs.\ Gate. Not tabulated yet:
+in the handover the span-64 and span-128 columns are identical for all four
+methods (5.76 / 3.06 / 2.90 / 2.71); check for a transcription error first.}
+
+\begin{figure*}[tb]
 \centering
-\figplaceholder{CDF of $t_\mathrm{ready}$ and paired difference
-(span 64, polynomial FF)\\
-source: designs/20261108\_ready\_dist\_poly/ready\_dist\_span64.png}
-\caption{Distribution of the write-ready time. \todo{add figure}}
+\includegraphics[width=0.9\textwidth]{figs/fig_ready_cdf_span64_poly.png}
+\caption{Distribution of the write-ready time for a 64-track seek with
+polynomial FF (1000 sequences). Top: cumulative distribution. Bottom: paired
+difference between Reset and the proposed method for the same disturbance
+sequence. \todo{legend says ``Shadow Kalman''; unify the method name with the
+text. Replace by the PDF version.}}
 \label{fig:cdf}
-\end{figure}
+\end{figure*}
+
+\note{Fig.~\ref{fig:cdf}: median / 90th / 99th percentile [ms] for HT:
+Reset 0.836 / 1.182 / 1.749, Shadow 0.716 / 0.954 / 1.579. With the same
+sequence the proposed method is faster by more than 0.05~ms in 28--41\% of the
+runs and slower in 7--14\%. Without filters more than 1\% of the HT runs do
+not settle within the evaluation time.}
 
 \subsection{Disturbance-Free Seek}
-\note{$t_\mathrm{hold}$ and $\max|u_{cp}|$ coincide with those of predict for
-9 spans $\times$ 13 plants (difference 0~$\mu$s, $u_{cp}$ difference
-$\le 0.18$~nm).}
+\note{Disturbance-free settling time $t_\mathrm{hold}$ (worst of LT/RT/HT) is
+identical to that of the other methods in 20 of the 21 conditions
+(0.247--1.119~ms). Exception: span 128, LT, $0.623 \rightarrow 0.941$~ms.
+The residual just after switching is already 0.0935~track with predict, close
+to the $\pm 0.1$~track band; the handed-over estimate, which contains a
+component learned from model error, raises it to 0.1057~track, so the PES
+leaves the band once.}
+\todo{Decide: report this case as it is, or add a countermeasure (lower
+$\gamma_s$ near switching, limit the handed-over amount) and recompute. Also
+pending for polynomial FF: check of $t_\mathrm{hold}$ and $\max|u_{cp}|$ on the
+13 perturbed plants (done only for MPC FF).}
 
 % ===========================================================================
 \section{Discussion and Conclusion}
@@ -382,7 +438,7 @@ $\le 0.18$~nm).}
 (2) the estimation error in the HDD loop is about twice the theoretical value
 (0.38 vs.\ 0.19): colored noise from the neighbouring 5.85~kHz mode,
 in-band variation of $G$, interaction with the other filters;
-(3) the gain is smaller with the MPC-based FF, reason not yet identified;
+(3) the gain over Gate is small ($-1$ to $-8\%$) and smaller still with an MPC-based FF, reason not yet identified; one condition shows a longer disturbance-free settling time;
 (4) designing all filters by \eqref{eq:mapping} independently does not beat
 loop shaping in following accuracy; joint design is future work.}
 
