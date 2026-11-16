@@ -106,11 +106,13 @@ disturbance whose amplitude and phase drift with time. Consequently, the AFC
 has to learn the disturbance again after the feedback controller is changed to
 the one for track following, and the position error increases during this
 period. Since data can be written only while the position error stays within a
-threshold, this delays the start of data writing. The authors have studied the
-initial values of the AFC for track-seek control \cite{yabui2025ivc};
-\todo{state in one sentence what [yabui2025ivc] covers and how this paper
-differs (random narrow-band disturbance, use of the position error during the
-seek)}.
+threshold, this delays the start of data writing. For periodic disturbances, the
+authors have proposed an initial value compensation of the AFC for track-seek
+control \cite{yabui2025ivc}. Since the amplitude and the phase of a periodic
+disturbance do not change during the seek, that method does not require any
+measurement during the seek. For a random narrow-band disturbance, in contrast,
+the disturbance itself changes during the seek, and the learning coefficients
+have to be updated from the signal measured during the seek.
 
 To address this issue, this paper proposes a control scheme using a background
 AFC. The key point of this study is that the position error during the seek
@@ -197,13 +199,16 @@ Among the 13 resonant filters, 11 filters have small damping ratios
 factor \cite{yabui2013}; they are treated as AFCs in this paper. The AFC for the angular
 frequency $\omega_0$ is formulated by the following algorithm:
 \begin{align}
-u(k) &= p(k)\cos(\Omega k) + q(k)\sin(\Omega k), \label{eq:afc_out}\\
+u(k) &= p(k-1)\cos(\Omega k) + q(k-1)\sin(\Omega k), \label{eq:afc_out}\\
 p(k) &= \eta\, p(k-1) + \lambda\, x(k)\cos(\Omega k + \theta), \label{eq:afc_p}\\
 q(k) &= \eta\, q(k-1) + \lambda\, x(k)\sin(\Omega k + \theta). \label{eq:afc_q}
 \end{align}
-Here, $u(k)$ is the compensation signal, $x(k)$ is the input of the AFC, i.e.,
-the PES, and $\Omega = \omega_0 \Ts$. The learning coefficients $p(k)$ and
-$q(k)$ are updated at every sample. The parameters $\lambda$ and $\theta$ are
+Here, $u(k)$ is the compensation signal, $x(k)$ is the input of the AFC, and
+$\Omega = \omega_0 \Ts$. The AFCs are placed in the feedback controller of the
+VCM or the PZT actuator, and $x(k)$ is the signal at that point of the
+controller, which is generated from the PES. The learning coefficients $p(k)$
+and $q(k)$ are updated at every sample, and the compensation signal at sample
+$k$ is calculated from the coefficients obtained at the previous sample. The parameters $\lambda$ and $\theta$ are
 the step size and the phase, respectively, and
 $\eta = e^{-\zeta_a \omega_0 \Ts}$ is the forgetting factor, where $\zeta_a$
 corresponds to the damping ratio of the equivalent resonant filter. For ease
@@ -211,7 +216,7 @@ of description, the learning coefficients are represented by the complex
 number $\thc(k) = p(k) - jq(k)$. Then,
 \eqref{eq:afc_out}--\eqref{eq:afc_q} are written as
 \begin{align}
-u(k) &= \re\{\thc(k) e^{j\Omega k}\}, \label{eq:afc_cout}\\
+u(k) &= \re\{\thc(k-1) e^{j\Omega k}\}, \label{eq:afc_cout}\\
 \thc(k) &= \eta\,\thc(k-1) + \lambda\, x(k)\, e^{-j(\Omega k + \theta)}.
 \label{eq:afc_update}
 \end{align}
@@ -325,11 +330,12 @@ model. For the nominal model, the PES during the seek is zero without the
 disturbance. This means that the disturbance can be observed from the PES even
 during the seek. One way to use this information is to keep the AFC in the
 feedback loop during the seek. In that case, however, the AFC also reacts to
-the transient caused by the model error and degrades the settling; in our
-simulation, the settling time without disturbance for a 256-track seek
-increased from 0.665~ms to 1.364~ms.
-\todo{these two values were obtained with the MPC-based FF; recompute with the
-polynomial FF or state the condition}
+the transient caused by the model error and degrades the settling. In our
+simulation with the AFCs kept in the feedback loop during the seek, the
+settling time without disturbance for a 256-track seek increased from 0.773~ms
+to 1.438~ms, and the input of the PZT actuator for a 512-track seek reached
+53.9~nm in the LT case, which exceeds the limit of 50~nm in the benchmark
+problem.
 
 To address this issue, the proposed control scheme separates the learning from
 the compensation during the seek. Fig.~\ref{fig:bg} shows the block diagram.
@@ -358,21 +364,25 @@ x_\mathrm{eff}(k) &= x(k)
  + \gamma_s \lambda_s\, x_\mathrm{eff}(k)\, e^{-j(\Omega k + \theta_s)}.
 \label{eq:bg}
 \end{align}
-\todo{check the sample indices in \eqref{eq:xeff} against the implementation}
 Here, $G_s$ is the frequency response at $\omega_0$ from the output of the AFC
-to its input with the feedback controller for the seek. At the start of the
-seek, $\thch$ is set to $\thc$. \todo{confirm this initial condition} At the mode transition, the coefficients are
+to its input with the feedback controller for the seek. Let $k_0$ denote
+the sample at which the seek starts and $k_t = k_0 + N_s$ the sample of the
+mode transition. The background AFC starts from the learning coefficients of
+the foreground AFC, i.e., $\thch(k_0-1) = \thc(k_0-1)$, and is updated for
+$k_0 \le k \le k_t - 1$. At the mode transition, the coefficients are
 transferred as
 \begin{equation}
-\thc(k) \leftarrow \thch(k), \label{eq:transfer}
+\thc(k_t-1) \leftarrow \thch(k_t-1), \label{eq:transfer}
 \end{equation}
-and the foreground AFC operates by \eqref{eq:afc_update} in track following.
+and the foreground AFC operates by \eqref{eq:afc_cout} and
+\eqref{eq:afc_update} from $k = k_t$ in track following.
 
 The second term on the right-hand side of \eqref{eq:xeff} is an input
 correction. Since the output of the background AFC is not applied to the plant,
 $x(k)$ contains only the effect of the compensation signal of the foreground
-AFC. The correction adds the change that would appear in $x(k)$ if the
-compensation signal of the background AFC were applied. As a result, the
+AFC, which is calculated from $\thc(k-1)$. The correction adds the change that
+would appear in $x(k)$ if the compensation signal of the background AFC were
+applied instead. As a result, the
 background AFC learns as if it were operating in the feedback loop, regardless
 of how the learning coefficients of the foreground AFC decay. This corresponds
 to the conditioning technique for bumpless transfer between controllers
@@ -407,7 +417,7 @@ The change in the learning coefficients caused by the input $x(k)$ during the
 $N_s$ samples from the start of the seek to the mode transition is
 proportional to
 \begin{equation}
-Z = \sum_{k=1}^{N_s} \eta^{N_s-k}\, x(k)\, e^{-j\Omega k}. \label{eq:Z}
+Z = \sum_{k=k_0}^{k_t-1} \eta^{k_t-1-k}\, x(k)\, e^{-j\Omega k}. \label{eq:Z}
 \end{equation}
 Let $Z_\mathrm{det}$ denote $Z$ for the seek without disturbance, which is
 caused by the model error, and $Z_\mathrm{dist}$ denote $Z$ for the nominal
