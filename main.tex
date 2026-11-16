@@ -51,12 +51,13 @@ Chiba, Japan}
 \todo{Write last, about 150--200 words. No symbols or math.}
 \note{Flow: (1) fan-induced vibration in HDDs is a random narrow-band
 disturbance; (2) disturbance-rejection filters are frozen during track seek, so
-the disturbance estimate is lost and the write-ready time is delayed; (3) the
-learned coefficients of AFC are interpreted as a Kalman prediction of the
-disturbance envelope; (4) this gives the time update during seek and a shadow
-AFC that keeps estimating without driving the plant; (5) benchmark simulation
-with 1000 disturbance sequences shows a shorter write-ready time with the
-disturbance-free settling unchanged.}
+the disturbance estimate decays and the position error after the seek
+increases; (3) the state of an AFC is an estimate of the disturbance envelope
+and the position error during seek still carries the disturbance; (4) a shadow
+AFC keeps estimating during seek without driving the plant and hands its
+estimate over at mode switching, while the applied output stays the same as in
+the conventional scheme; (5) benchmark simulation with 1000 disturbance
+sequences: smaller position error and shorter write-ready time after seek.}
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -83,20 +84,20 @@ envelope drifts with a correlation time $1/(\zeta_d\omega_0)$. During a seek
 the filter input is gated (or the state is reset), so the estimate decays and
 must be re-learned after mode switching. This delays the write-ready time.}
 
-\note{P4 Idea. The filters themselves stay loop-shaped. We add an
-estimation-theoretic view: the AFC state is an estimate of the complex envelope
-of the disturbance, and a steady-state Kalman predictor tells us (i) how the
-estimate should evolve while no measurement is used and (ii) how to keep using
-the position error during seek without disturbing the seek response.}
+\note{P4 Idea. The filters and their handling of the output stay as they are
+(loop-shaped, input gated during seek). We use an estimation view: the AFC
+state is an estimate of the complex envelope of the disturbance and the
+demodulated input is its innovation. The position error during seek contains
+the disturbance, so the estimate can be kept up to date by a second copy of
+the AFC that is not applied to the plant.}
 
 \note{P5 Contributions (three items):
-(1) interpretation of the AFC learned coefficients as an envelope estimate, and
-its relation to the MMSE (Kalman) predictor: a loop-shaped AFC gives a shrunk
-and rotated estimate with a short memory;
-(2) shadow AFC that separates estimation from actuation during seek, with a
-seek-time gain that treats model error as measurement noise;
+(1) shadow AFC: estimation separated from actuation during seek, with an input
+correction that makes the estimate independent of what is actually applied;
+(2) seek-time gain that treats the model error of the seek response as
+measurement noise;
 (3) paired evaluation on the IEEJ HDD benchmark with 1000 disturbance
-sequences.}
+sequences against reset and gate.}
 
 % ===========================================================================
 \section{Problem Setting}
@@ -116,7 +117,7 @@ loop-shaped under constraints on the sensitivity function and the closed-loop
 poles; worst-case $3\sigma$ of 4.45~nm. Eleven of them are narrow-band
 ($\zeta_a \le 0.05$) and equivalent to the AFC of
 \eqref{eq:afc_out}--\eqref{eq:afc_update}; the methods below apply to these
-eleven. None of them is designed by the Kalman formulas of Section~III.}
+eleven.}
 
 \begin{figure}[tb]
 \centering
@@ -168,23 +169,27 @@ model, so the PES during seek contains only disturbance and model error. The
 disturbance is observable during seek.}
 
 % ===========================================================================
-\section{Kalman Interpretation of AFC}
-% Target length: 1.25 pages. Table I (6.66 kHz), Fig. 3 (envelope estimate)
+\section{AFC as an Estimator of the Disturbance Envelope}
+% Target length: 0.7 page. Fig. 3 (envelope estimate)
 % ===========================================================================
 
 \subsection{Envelope Model of the Disturbance}
 The disturbance at the AFC input is written with a complex envelope $D(k)$ as
 \begin{equation}
-d(k) = \re\{D(k) e^{j\Omega k}\}, \qquad \E|D|^2 = 2\sigma_d^2 ,
+d(k) = \re\{D(k) e^{j\Omega k}\},
 \end{equation}
-and the envelope of a lightly damped mode is approximated by
+and the envelope of a lightly damped mode with damping ratio $\zeta_d$ is
+approximated by
 \begin{equation}
-D(k+1) = \etad D(k) + v(k), \qquad \etad = e^{-\zeta_d \omega_0 \Ts},
+D(k+1) = \etad D(k) + v(k), \qquad \etad = e^{-\zeta_d \omega_0 \Ts}.
 \label{eq:ar1}
 \end{equation}
-with $Q = \E|v|^2 = 2\sigma_d^2(1-\etad^2)$.
+\note{The envelope is correlated over $1/(\zeta_d\omega_0)$: 3.0~ms at
+6.66~kHz, longer than a short seek. This is why an estimate obtained before or
+during the seek is still useful after it. $\etad$ is used only to describe the
+disturbance; the proposed method does not use it.}
 
-\subsection{Demodulated Input as Innovation}
+\subsection{AFC State and Innovation}
 Let $\vartheta = -\Gp(\omega_0)\thc$ be the disturbance component cancelled by
 the AFC, where $\Gp$ is the loop from the AFC output to its input. Demodulating
 the input gives
@@ -192,103 +197,65 @@ the input gives
 y(k) = 2x(k)e^{-j\Omega k} \simeq D(k) - \vartheta(k) + w(k),
 \label{eq:innov}
 \end{equation}
-with $R = \E|w|^2 = 4\sigma_n^2$, where $\sigma_n^2$ is the equivalent variance
-of the other disturbance components at $\omega_0$.
-\note{$y$ is ``measurement minus prediction'', i.e.\ the innovation. Image
-component at $2\Omega$ neglected because learning is slow.}
-
-\subsection{Steady-State Kalman Predictor}
-The steady-state Kalman predictor \cite{kalman1960,anderson1979} for
-\eqref{eq:ar1} and \eqref{eq:innov} is
+where $w$ collects the other disturbance components around $\omega_0$. With
+\eqref{eq:innov}, the update \eqref{eq:afc_update} becomes
 \begin{equation}
-\vartheta(k+1) = \etad\,\vartheta(k) + \beta\, y(k), \qquad
-\beta = \frac{\etad P}{P+R},
-\label{eq:kalman}
+\vartheta(k+1) = \eta\,\vartheta(k) + \beta\,e^{j\phi}\, y(k), \quad
+\beta e^{j\phi} = -\tfrac{\lambda}{2}\,\Gp(\omega_0)\, e^{-j\theta},
+\label{eq:observer}
 \end{equation}
-\begin{equation}
-P = \frac{-b + \sqrt{b^2 + 4QR}}{2}, \qquad b = R(1-\etad^2) - Q .
-\end{equation}
-Comparing \eqref{eq:kalman} with \eqref{eq:afc_update} through
-$\thc = -\vartheta/\Gp$ gives
-\begin{equation}
-\eta = \etad, \qquad
-\lambda = \frac{2\beta}{|\Gp(\omega_0)|}, \qquad
-\theta = \arg \Gp(\omega_0) + \pi .
-\label{eq:mapping}
-\end{equation}
-\note{Meaning: $\eta$ = memory length of the disturbance, $\lambda$ =
-confidence in the measurement, $\theta$ = loop phase compensation.
-Wording: \eqref{eq:mapping} is used as a reference for interpretation; the
-following controller in this paper remains loop-shaped. Do not claim that
-tuning is unnecessary (per-mode design overestimates $\beta$ for wide modes
-such as 5.85~kHz).}
+which has the form of a predictor for \eqref{eq:ar1} driven by the innovation
+$y$ \cite{kalman1960,anderson1979}.
+\note{Two consequences used in Section~IV: (i) $\vartheta$ is an estimate of
+$D$, so it is worth preserving across the seek; (ii) the gain on $y$ plays the
+role of a Kalman gain, signal/(signal + noise), so it should be lowered when
+the measurement is less reliable.}
 
-\subsection{What a Loop-Shaped AFC Estimates}
-\note{Steady-state ratio of the estimate to the true envelope:
-$\kappa = -v/(1-\eta-v)$, $v = (\lambda/2)e^{-j\theta}\Gp$.
-Loop-shaped filter at 6.66~kHz: $\kappa = 0.70\angle{-10^\circ}$
-(simulation: regression coefficient $0.612\angle{-11.8^\circ}$).
-Kalman parameters: $\kappa = \beta/(1-\etad+\beta)$ is real (no rotation;
-simulation $0.748\angle{+1.5^\circ}$, optimum $0.807\angle 0^\circ$).
-So the loop-shaped AFC holds a shrunk, rotated, short-memory estimate.}
-
-\begin{table}[tb]
-\caption{AFC Parameters at 6.66 kHz}
-\label{tab:param}
-\centering
-\begin{tabular}{lcc}
-\toprule
- & Loop-shaped & Kalman \eqref{eq:mapping} \\
-\midrule
-Forgetting factor $\eta$ & 0.9691 & 0.99338 \\
-Memory length [ms] & 0.65 & 3.0 \\
-Learning strength $\beta$ & 0.0638 & 0.0546 \\
-Learning gain $\lambda$ & 0.18528 & 0.15871 \\
-Learning phase $\theta$ [deg] & $-25.1$ & $-59.9$ \\
-\bottomrule
-\end{tabular}
-\end{table}
+\note{How good is the estimate held by the loop-shaped AFC? Steady-state ratio
+to the true envelope $\kappa = -v/(1-\eta-v)$, $v=(\lambda/2)e^{-j\theta}\Gp$:
+$0.70\angle{-10^\circ}$ at 6.66~kHz; simulation gives a regression coefficient
+of $0.63\angle{-11.6^\circ}$ with all disturbances. A shrunk and slightly
+rotated, but clearly correlated, estimate.}
 
 \begin{figure}[tb]
 \centering
 \figplaceholder{Estimated envelope $-\Gp\thc$ vs.\ true envelope
-(magnitude, phase error)\\
-source: designs/20261112\_pq\_envelope/pq\_envelope.png}
+(magnitude, phase error), loop-shaped AFC at 6.66~kHz\\
+source: designs/20261112\_pq\_envelope/pq\_envelope.png (regenerate without
+the Kalman-designed curve)}
 \caption{AFC state and the envelope of the 6.66~kHz disturbance.
 \todo{add figure}}
 \label{fig:envelope}
 \end{figure}
 
 % ===========================================================================
-\section{AFC During Track Seek}
-% Target length: 1.0 page. Fig. 4 (shadow AFC structure)
+\section{Shadow AFC During Track Seek}
+% Target length: 1.1 pages. Fig. 4 (shadow AFC structure)
 % ===========================================================================
 
-\subsection{Time Update While the Input Is Gated}
-\note{Without measurements the optimal prediction is the time update
-$\thc \leftarrow \etad\,\thc$ (\emph{predict}); normalized error grows as
-$e(N) = \etad^{2N}e_0 + (1-\etad^{2N})$. Gating a loop-shaped AFC instead
-applies $\eta^{N}$: at 6.66~kHz the state shrinks to 0.27 after 0.84~ms,
-whereas the correlation of the disturbance supports $\etad^{N} = 0.76$.
-Gate is therefore close to reset. If $\eta = \etad$, gate equals predict;
-in the controller used here $\eta \neq \etad$ for all eleven AFCs, and the
-difference between gate and predict comes only from this.}
+\subsection{Loss of the Estimate in the Existing Schemes}
+\note{Reset discards the estimate. Gate lets it decay as $\eta^{N}$: at
+6.66~kHz ($\eta = 0.9691$, memory 0.65~ms) the state shrinks to 0.27 after
+0.84~ms, although the envelope itself is still correlated by
+$\etad^{N} = 0.76$. In both cases the AFC must re-learn after mode switching.
+Note also that a held estimate helps on average but not in every run: if the
+envelope phase has moved by more than $60^\circ$ the held output adds to the
+disturbance. Hence statistical evaluation in Section~V.}
 
-\subsection{Shadow AFC: Separating Estimation From Actuation}
+\subsection{Separating Estimation From Actuation}
 \note{Motivation in one sentence: closing the AFC loop during seek uses the
 measurement but interacts with residual vibration and model error
 (disturbance-free settling at span 256 degraded from 0.665 to 1.364~ms), so
 estimation and actuation are separated.}
 
-During seek the input of the actual AFC is gated and its state follows the
-time update of the disturbance model,
+During seek the actual AFC is handled as in the conventional scheme: its input
+is gated and its state decays with its own forgetting factor,
 \begin{equation}
-\thc(k+1) = \etad\,\thc(k),
-\label{eq:predict}
+\thc(k+1) = \eta\,\thc(k).
+\label{eq:gate}
 \end{equation}
-so that the plant is driven by the predicted value. In parallel, a shadow state
-$\thch$, which is not applied to the plant, keeps learning with the update law
-of the AFC itself from the corrected input
+In parallel, a shadow state $\thch$, which is not applied to the plant, keeps
+learning with the same update law from the corrected input
 \begin{equation}
 x_\mathrm{eff}(k) = x(k) + \re\{G_s(\thch(k) - \thc(k))e^{j\Omega k}\},
 \label{eq:xeff}
@@ -302,25 +269,24 @@ where $G_s$ is the loop with the seek controller, and
 $\lambda_s = \lambda\,|G_f/G_s|$, $\theta_s = \theta - \arg(G_f/G_s)$ convert
 the parameters designed for the following loop $G_f$. At mode switching the
 estimate is handed over, $\thc \leftarrow \thch$.
-\note{Two forgetting factors, do not mix: the output path \eqref{eq:predict}
-uses $\etad$ of the disturbance model; the shadow estimator \eqref{eq:shadow}
-uses $\eta$ of the AFC, i.e.\ it is the same estimator as in track following,
-converted to the seek loop and kept connected to the measurement. The term
-added in \eqref{eq:xeff} restores what the input would have been if $\thch$
-had been applied.}
-\note{Claim, stated precisely: the output before mode switching equals that of
-predict, so the disturbance-free response is unchanged \emph{up to the
-switching instant}. After the hand-over the estimate may contain a component
-learned from model error during the seek; $\gamma_s$ reduces it but not to
-zero (Section~V-C).}
+\note{The second term of \eqref{eq:xeff} restores what the input would have
+been if $\thch$ had been applied (virtual closed loop), so the shadow estimate
+does not depend on how the actual output decays. The proposed method is
+``gate + shadow estimation + hand-over''; no disturbance model is needed to
+implement it.}
+\note{Claim, stated precisely: the applied output before mode switching is
+identical to that of gate (difference $<10^{-15}$ in simulation), so the
+response is unchanged \emph{up to the switching instant}. After the hand-over
+the estimate may contain a component learned from model error during the seek;
+$\gamma_s$ reduces it but not to zero (Section~V-C).}
 
 \begin{figure}[tb]
 \centering
 \includegraphics[width=\columnwidth]{figs/fig_block_shadow_seek.png}
-\caption{Actual AFC (prediction only) and shadow AFC (estimation only) during
-seek. \todo{draft figure: move the bottom text to this caption, correct
-``disturbance-free seek is unchanged'' to ``unchanged up to the mode switch'',
-replace by the PDF version.}}
+\caption{Actual AFC (input gated) and shadow AFC (estimation only) during
+seek. \todo{figure is the earlier version: the actual AFC box must read
+$\theta_c \leftarrow \eta\,\theta_c$ (not $\eta_d$); move the bottom text to
+this caption; replace by the PDF version.}}
 \label{fig:shadow}
 \end{figure}
 
@@ -335,16 +301,16 @@ Z = \sum_{k=0}^{N_s-1} \eta^{N_s-1-k}\, x(k)\, e^{-j\Omega k},
 \label{eq:gamma}
 \end{equation}
 \note{$Z_\mathrm{det}$: disturbance-free seek over a set $U$ of 12 perturbed
-plants; $Z_\mathrm{dist}$: nominal plant with disturbance only (200 sequences).
-Example values of $\gamma_s$ (span 64, polynomial FF): 0.70 at 6.66~kHz,
-0.50 at 5.85~kHz, 0.05 at 3.3~kHz, 0.007 at 2.2~kHz. Modes on the VCM side
-that are sensitive to model error get $\gamma_s \approx 0$, i.e.\ they reduce
-to predict. $\gamma_s$ depends on the FF because the deterministic residual
-during seek does.}
+plants; $Z_\mathrm{dist}$: nominal plant with disturbance only, actual AFC
+gated (200 sequences). Example values of $\gamma_s$ (span 64, polynomial FF):
+0.70 at 6.66~kHz, 0.49 at 5.85~kHz, 0.05 at 3.3~kHz, 0.007 at 2.2~kHz. Modes
+on the VCM side that are sensitive to model error get $\gamma_s \approx 0$,
+i.e.\ they reduce to gate. $\gamma_s$ depends on the span and on the FF because
+the deterministic residual during seek does.}
 
 % ===========================================================================
 \section{Simulation}
-% Target length: 1.5 pages. Table II (t_ready), Fig. 5 (CDF)
+% Target length: 1.7 pages. Table I, Fig. 5 (sigma(t)), Fig. 6 (CDF)
 % ===========================================================================
 
 \subsection{Conditions}
@@ -352,9 +318,9 @@ during seek does.}
 unchanged. Polynomial FF. Seven seek spans (4--1024 tracks), LT/RT/HT.
 1000 disturbance sequences; $\gamma_s$ computed from a separate set of 200
 sequences. The same sequences are used for all methods (paired comparison).
-Methods: No filters, Reset, Gate, Predict, Shadow AFC (proposed).}
+Methods: No filters, Reset, Gate, Shadow AFC (proposed).}
 
-\subsection{Write-Ready Time}
+\subsection{Position Error After Seek}
 \begin{table}[tb]
 \caption{Results With Polynomial FF (1000 Sequences, Worst of LT/RT/HT)}
 \label{tab:tready}
@@ -365,38 +331,41 @@ Methods: No filters, Reset, Gate, Predict, Shadow AFC (proposed).}
 \toprule
 Span [track] & 4 & 16 & 64 & 128 & 256 & 512 & 1024 \\
 \midrule
-\multicolumn{8}{l}{\textit{90th percentile of $t_\mathrm{ready}$ [ms]}}\\
-No filters & 1.431 & 2.494 & 3.340 & 5.105 & 2.298 & 2.870 & 3.298 \\
-Reset      & 0.857 & 1.219 & 1.182 & 1.699 & 1.303 & 1.570 & 1.719 \\
-Gate       & 0.692 & 1.058 & 1.097 & 1.615 & 1.174 & 1.423 & 1.700 \\
-Predict    & 0.658 & 1.047 & 1.095 & 1.610 & 1.135 & 1.374 & 1.691 \\
-Shadow     & \textbf{0.657} & \textbf{1.031} & \textbf{1.004} & \textbf{1.592} & \textbf{1.099} & \textbf{1.313} & \textbf{1.569} \\
-\midrule
 \multicolumn{8}{l}{\textit{$3\sigma$ of PES for 1 ms after mode switching [nm]}}\\
 No filters & 8.18 & 9.28 & 9.39 & 11.03 & 8.40 & 9.02 & 8.91 \\
 Reset      & 6.49 & 7.03 & 7.31 & 8.84 & 6.34 & 6.66 & 6.82 \\
 Gate       & 5.92 & 6.62 & 6.97 & 8.59 & 5.90 & 6.24 & 6.43 \\
-Predict    & 5.87 & 6.57 & 6.93 & 8.56 & 5.80 & 6.14 & 6.38 \\
-Shadow     & \textbf{5.62} & \textbf{6.55} & \textbf{6.66} & \textbf{8.34} & \textbf{5.64} & \textbf{6.03} & \textbf{6.16} \\
+Shadow     & \textbf{5.63} & \textbf{6.55} & \textbf{6.67} & \textbf{8.33} & \textbf{5.66} & \textbf{6.05} & \textbf{6.16} \\
+\midrule
+\multicolumn{8}{l}{\textit{90th percentile of $t_\mathrm{ready}$ [ms]}}\\
+No filters & 1.431 & 2.494 & 3.340 & 5.105 & 2.298 & 2.870 & 3.298 \\
+Reset      & 0.857 & 1.219 & 1.182 & 1.699 & 1.303 & 1.570 & 1.719 \\
+Gate       & 0.692 & 1.058 & 1.097 & 1.615 & 1.174 & 1.423 & 1.700 \\
+Shadow     & \textbf{0.657} & \textbf{1.054} & \textbf{1.005} & \textbf{1.591} & \textbf{1.102} & \textbf{1.314} & \textbf{1.569} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\note{$t_\mathrm{ready}$ (90th percentile): Shadow is the shortest of the five
-methods at all seven spans; $-6$ to $-23\%$ vs.\ Reset, $-1$ to $-8\%$ vs.\
-Gate, $-52$ to $-70\%$ vs.\ No filters. $3\sigma$ after switching: $-6$ to
-$-13\%$ vs.\ Reset. The order Reset $>$ Gate $>$ Predict $>$ Shadow follows
-the amount of information kept: nothing, decay with $\eta$, time update with
-$\etad$, time update plus measurement update.}
+\note{$3\sigma$ for 1~ms after switching: Shadow $-6$ to $-13\%$ vs.\ Reset,
+$-1$ to $-5\%$ vs.\ Gate, $-24$ to $-33\%$ vs.\ No filters.
+$t_\mathrm{ready}$ (90th percentile): $-6$ to $-23\%$ vs.\ Reset, $-0.4$ to
+$-8\%$ vs.\ Gate, $-52$ to $-70\%$ vs.\ No filters. Shadow is the best of the
+four at every span in both indices. The difference between Gate and Shadow is
+exactly the effect of the shadow estimation, since the applied output before
+switching is the same.}
 
-\todo{Decide whether Gate and Predict stay in Table~\ref{tab:tready}. They are
-kept in this draft because Section~IV argues through gate vs.\ predict and
-because Gate is the stronger existing baseline.}
+\todo{Decide whether Gate stays in Table~\ref{tab:tready} (handover lists
+three methods for the paper). Kept here: the proposed method is ``gate +
+shadow'', so Gate is the baseline that isolates its effect.}
+
+\todo{New evaluation to add (agreed direction): ensemble $\sigma(t)$ of the PES
+around mode switching as the main figure, and $3\sigma$ over windows of
+0--1~ms, 0--2~ms and one disk revolution (8.33~ms). Not computed yet.}
 
 \todo{Excess-error index (integral of $\sigma^2-\sigma_{ss}^2$ up to 6~ms):
-$-45$ to $-62\%$ vs.\ Reset, $-10$ to $-16\%$ vs.\ Gate. Not tabulated yet:
-in the handover the span-64 and span-128 columns are identical for all four
-methods (5.76 / 3.06 / 2.90 / 2.71); check for a transcription error first.}
+$-41$ to $-61\%$ vs.\ Reset, $-7$ to $-15\%$ vs.\ Gate. Not tabulated: the
+span-64 and span-128 columns are identical for every method (Reset 5.76,
+Gate 3.06, Shadow 2.78) also in the recomputed report; check the script.}
 
 \begin{figure*}[tb]
 \centering
@@ -404,29 +373,32 @@ methods (5.76 / 3.06 / 2.90 / 2.71); check for a transcription error first.}
 \caption{Distribution of the write-ready time for a 64-track seek with
 polynomial FF (1000 sequences). Top: cumulative distribution. Bottom: paired
 difference between Reset and the proposed method for the same disturbance
-sequence. \todo{legend says ``Shadow Kalman''; unify the method name with the
-text. Replace by the PDF version.}}
+sequence. \todo{this file is the earlier version (output with $\eta_d$);
+replace by the recomputed figure, PDF version; unify the method name.}}
 \label{fig:cdf}
 \end{figure*}
 
-\note{Fig.~\ref{fig:cdf}: median / 90th / 99th percentile [ms] for HT:
-Reset 0.836 / 1.182 / 1.749, Shadow 0.716 / 0.954 / 1.579. With the same
-sequence the proposed method is faster by more than 0.05~ms in 28--41\% of the
-runs and slower in 7--14\%. Without filters more than 1\% of the HT runs do
-not settle within the evaluation time.}
+\note{Fig.~\ref{fig:cdf}, span 64, median / 90th / 99th percentile [ms]:
+LT Reset 0.723 / 1.097 / 1.513, Shadow 0.658 / 1.005 / 1.401;
+RT Reset 0.515 / 0.954 / 1.330, Shadow 0.513 / 0.839 / 1.185;
+HT Reset 0.836 / 1.182 / 1.749, Shadow 0.716 / 0.952 / 1.578.
+With the same sequence the proposed method is faster than Reset by more than
+0.05~ms in 25--38\% of the runs and slower in 4--11\% (span 64); over four
+spans and three cases, faster 18--43\%, slower 4--12\%. Individual runs can
+be worse, as expected from Section~IV-A.}
 
 \subsection{Disturbance-Free Seek}
 \note{Disturbance-free settling time $t_\mathrm{hold}$ (worst of LT/RT/HT) is
 identical to that of the other methods in 20 of the 21 conditions
 (0.247--1.119~ms). Exception: span 128, LT, $0.623 \rightarrow 0.941$~ms.
-The residual just after switching is already 0.0935~track with predict, close
-to the $\pm 0.1$~track band; the handed-over estimate, which contains a
-component learned from model error, raises it to 0.1057~track, so the PES
-leaves the band once.}
+The residual just after switching is already 0.0935~track without the shadow
+AFC, close to the $\pm 0.1$~track band; the handed-over estimate, which
+contains a component learned from model error, raises it to 0.1057~track, so
+the PES leaves the band once.}
 \todo{Decide: report this case as it is, or add a countermeasure (lower
 $\gamma_s$ near switching, limit the handed-over amount) and recompute. Also
 pending for polynomial FF: check of $t_\mathrm{hold}$ and $\max|u_{cp}|$ on the
-13 perturbed plants (done only for MPC FF).}
+13 perturbed plants.}
 
 % ===========================================================================
 \section{Discussion and Conclusion}
@@ -435,12 +407,13 @@ pending for polynomial FF: check of $t_\mathrm{hold}$ and $\max|u_{cp}|$ on the
 
 \note{Limitations to state plainly:
 (1) simulation only, experiments are future work;
-(2) the estimation error in the HDD loop is about twice the theoretical value
-(0.38 vs.\ 0.19): colored noise from the neighbouring 5.85~kHz mode,
-in-band variation of $G$, interaction with the other filters;
-(3) the gain over Gate is small ($-1$ to $-8\%$) and smaller still with an MPC-based FF, reason not yet identified; one condition shows a longer disturbance-free settling time;
-(4) designing all filters by \eqref{eq:mapping} independently does not beat
-loop shaping in following accuracy; joint design is future work.}
+(2) the gain over Gate is modest ($3\sigma$ $-1$ to $-5\%$, $t_\mathrm{ready}$
+$-0.4$ to $-8\%$) and the effect lasts about 1~ms after switching;
+(3) one condition shows a longer disturbance-free settling time;
+(4) $\gamma_s$ is computed offline per span and FF from a set of perturbed
+plants; online adaptation is future work;
+(5) the output during seek still decays faster than the disturbance
+decorrelates; using a disturbance model for the output is future work.}
 
 \note{Conclusion: summarize the interpretation, the shadow AFC, and the
 quantitative result in three sentences.}
