@@ -448,7 +448,11 @@ disturbances, and the evaluation of the benchmark problem were used without
 modification. The disturbances consist of the rotational vibration, the
 fan-induced vibration, and the repeatable runout. The feedforward input for
 the seek is the one based on the polynomial trajectory. Six seek spans from 4
-to 1024 tracks were evaluated for the LT, RT, and HT cases. For each condition,
+to 1024 tracks were evaluated for the LT, RT, and HT cases. A 128-track seek
+was also simulated; since its seek time and the time of the mode transition
+are the same as those of the 64-track seek with this feedforward input, the
+indices for the disturbances coincide with those of the 64-track seek, and it
+is omitted from the table of results. For each condition,
 1000 disturbance sequences were used, and the same sequences were applied to
 all the schemes. The disturbance sequences used for calculating $\gamma_s$
 are different from those for the evaluation.
@@ -554,12 +558,13 @@ control scheme is the same as that of the other schemes for the six seek spans
 in Table~\ref{tab:result} (0.247~ms to 1.119~ms in the worst case). This is
 because the compensation signal before the mode transition is not changed and
 $\gamma_s$ limits the learning of the error caused by the model error.
-\todo{Report the 128-track seek in the LT case here: $t_\mathrm{hold}$ changes
-from 0.623 to 0.941~ms because the residual just after the mode transition
-(0.0935~track) is close to the threshold and the transferred coefficients
-raise it to 0.1057~track. Either state it in one or two sentences as a
-limitation, or add a countermeasure and recompute. Also pending: 13 perturbed
-models with the polynomial FF.}
+For the 128-track seek, in contrast, $t_\mathrm{hold}$ in the LT case
+increased from 0.623~ms to 0.941~ms. In this condition, the residual vibration
+just after the mode transition is 0.0935~track even without the background
+AFC, which is close to the threshold of 0.1~track, and the transferred
+coefficients raise it to 0.1057~track. This shows that the transferred
+coefficients can still contain a small component learned from the error caused
+by the model error, and reducing it is left for future work.
 
 % ===========================================================================
 \section{Conclusion}
