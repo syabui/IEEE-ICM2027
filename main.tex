@@ -135,9 +135,10 @@ correlation time 3.0~ms): largest in disturbance PSD, disturbance $\sigma$
 
 \begin{figure}[tb]
 \centering
-\figplaceholder{PSD of the fan-induced disturbance (13 modes) and PES\\
-source: designs/20261106\_fan\_psd/fan\_psd.png}
-\caption{Power spectral density of the fan-induced vibration. \todo{add figure}}
+\includegraphics[width=\columnwidth]{figs/fig_fan_psd.png}
+\caption{Fan-induced vibration: (a) disturbance PSD of the 13 modes, (b) VCM
+frequency response, (c) PSD of the position error. \todo{three panels are
+tall for one column: keep (a) and (c) only, enlarge the fonts, export as PDF.}}
 \label{fig:psd}
 \end{figure}
 
@@ -287,11 +288,11 @@ $\gamma_s$ reduces it but not to zero (Section~V-C).}
 
 \begin{figure}[tb]
 \centering
-\includegraphics[width=\columnwidth]{figs/fig_block_shadow_seek.png}
-\caption{Foreground AFC (input switched off) and background AFC (estimation only) during
-seek. \todo{figure is the earlier version: the foreground AFC box must read
-$\theta_c \leftarrow \eta\,\theta_c$ (not $\eta_d$); move the bottom text to
-this caption; replace by the PDF version.}}
+\includegraphics[width=\columnwidth]{figs/fig_block_background_afc.pdf}
+\caption{Foreground AFC (input switched off) and background AFC (estimation
+only) during seek, and coefficient transfer at mode switching. \todo{move the
+two lines of text at the bottom of the figure into this caption; ``the seek up
+to the switch is unchanged'' is the precise claim.}}
 \label{fig:shadow}
 \end{figure}
 
@@ -381,12 +382,12 @@ around mode switching as the main figure, and $3\sigma$ over windows of
 
 \begin{figure*}[tb]
 \centering
-\includegraphics[width=0.9\textwidth]{figs/fig_ready_cdf_span64_poly.png}
+\includegraphics[width=0.9\textwidth]{figs/fig_ready_cdf_span64_poly.pdf}
 \caption{Distribution of the write-ready time for a 64-track seek with
 polynomial FF (1000 sequences). Top: cumulative distribution. Bottom: paired
 difference between Reset and the proposed method for the same disturbance
-sequence. \todo{this file is the earlier version (output with $\eta_d$);
-replace by the recomputed figure, PDF version; unify the method name.}}
+sequence. \todo{the Switch curve is not in this figure; add it, since the
+table compares against Switch.}}
 \label{fig:cdf}
 \end{figure*}
 
