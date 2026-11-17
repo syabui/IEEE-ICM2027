@@ -82,12 +82,13 @@ nanometer-scale accuracy, and a dual-stage actuator system composed of a voice
 coil motor (VCM) and a piezoelectric (PZT) actuator is employed in the head
 positioning control system \cite{yabui2023jvc,atsumi2024}. In a data center,
 many HDDs are installed in one enclosure together with cooling fans, and the
-vibration induced by the fans is one of the dominant disturbances that degrade
-the positioning accuracy.
-\todo{add 2--3 references on fan-induced vibration in storage enclosures}
+vibration induced by the fans, which contains components up to approximately
+10~kHz, is one of the dominant disturbances that degrade the positioning
+accuracy \cite{eguchi2009,eguchi2017,yabui2022}.
 
 To suppress such narrow-band disturbances, resonant filters are added to the
-feedback controller and designed by loop shaping \cite{atsumi2026amc}. Adaptive
+feedback controller and designed by loop shaping
+\cite{atsumi2007,atsumi2026amc}. Adaptive
 feedforward cancellation (AFC) \cite{sacks1993,bodson1994} is a scheme that
 learns the coefficients of a sinusoidal compensation signal from the error
 signal, and it is known to be equivalent to a resonant filter in the feedback
@@ -145,10 +146,13 @@ Fig.~\ref{fig:block} shows a block diagram of the head positioning control
 system. The control system is created from the HDD benchmark problem for
 track-seek control established by the committee of the IEEJ Industry
 Applications Society \cite{ieej_benchmark}. The control system employs a
-dual-stage actuator system composed of the VCM (subscript $v$) and the PZT
-actuator (subscript $p$), where $P_v$, $P_p$ and $C_v$, $C_p$ are the actuator
-models and the feedback controllers, respectively. In addition, $r(k)$ is the
-reference signal, $e(k)$ is the position error signal (PES), $y(k)$ is the head
+dual-stage actuator system composed of the VCM (subscript $V$) and the PZT
+actuator (subscript $P$), where $P_V$, $P_P$ and $C_V$, $C_P$ are the actuator
+models and the feedback controllers, respectively. The controllers are
+connected in the decoupled structure \cite{li2000,yabui2020}, in which the
+displacement of the PZT actuator estimated by the model $D_P \approx P_P$ is
+added to the input of the VCM controller. In addition, $r(k)$ is the reference
+signal, $e(k)$ is the position error signal (PES), $y(k)$ is the head
 position, and $d(k)$ is the disturbance. The sampling time is
 $\Ts = 19.84~\mu$s, and $k$ is the sample number. The benchmark problem
 provides three cases of the controlled object, namely the low-temperature (LT),
@@ -157,24 +161,38 @@ frequencies and the damping ratios of the actuators vary.
 
 \begin{figure}[tb]
 \centering
-\figplaceholder{Block diagram of the head positioning control system
-(dual-stage actuator, seek / following controllers, AFCs)}
+\includegraphics[width=\columnwidth]{figs/fig_block_control_system.pdf}
 \caption{Block diagram of the head positioning control system.
-\todo{draw in the style of the previous papers}}
+\todo{draft from the simulation kit; to be replaced by the final drawing}}
 \label{fig:block}
 \end{figure}
 
 The feedback controller is changed according to the operation. During the seek
-and the settling, the feedback controller of the benchmark problem is used
-together with a feedforward input and the reference trajectory $r(k)$
-calculated from the nominal (RT) model. At 0.3~ms after the end of the
-reference trajectory, the feedback controller is changed to the one for track
-following. In this paper, this change is referred to as the mode transition.
-The feedback controller for track following has 13 resonant filters for
-disturbance rejection, which were designed by the loop-shaping method
+and the settling, the controllers $R_{s,P}$ and $R_{s,V}$ of the benchmark
+problem are used together with a feedforward input and the reference
+trajectory $r(k)$ calculated from the nominal (RT) model. At 0.3~ms after the
+end of the reference trajectory, the feedback controller is changed to the one
+for track following. In this paper, this change is referred to as the mode
+transition. In track following, the disturbance-rejection filters $F_P$ and
+$F_V$ are connected by the switch $S$ in Fig.~\ref{fig:block}. They consist of
+13 resonant filters in total, which were designed by the loop-shaping method
 \cite{atsumi2026amc} under constraints on the gain of the sensitivity function
-and the closed-loop poles. With these filters, the $3\sigma$ value of the PES
-in track following is 4.45~nm in the worst case.
+and the closed-loop poles.
+
+Fig.~\ref{fig:sens} shows the gain of the sensitivity function in track
+following for the RT case with and without the disturbance-rejection filters.
+The vertical lines indicate the center frequencies of the filters. The filters
+lower the gain at the frequencies of the disturbances, whereas the maximum gain
+is almost unchanged: 5.92~dB without the filters and 5.97~dB with the filters.
+With these filters, the $3\sigma$ value of the PES in track following is
+4.45~nm in the worst case.
+
+\begin{figure}[tb]
+\centering
+\includegraphics[width=\columnwidth]{figs/fig_sensitivity_c2.pdf}
+\caption{Gain of the sensitivity function in track following (RT case).}
+\label{fig:sens}
+\end{figure}
 
 \subsection{Fan-Induced Vibration}
 Fig.~\ref{fig:psd}(a) shows the power spectral density (PSD) of the fan-induced
@@ -295,15 +313,16 @@ and the product of $\lambda$ and $|\Gp|$ plays the role of the gain of the
 estimator.
 
 Fig.~\ref{fig:envelope} compares $\vartheta(k)$ of the AFC at 6.66~kHz with the
-envelope of the disturbance in track following. The regression coefficient of
-$\vartheta$ on $D$ is $0.63\angle{-11.6^\circ}$; namely, the learning
-coefficients follow the envelope of the disturbance.
+envelope of the disturbance in track following, where only the mode at
+6.66~kHz is applied as the disturbance. The amplitude of $\vartheta(k)$ follows
+that of the envelope, and the mean of the phase error is $-10^\circ$. The
+regression coefficient of $\vartheta$ on $D$ is $0.64\angle{-10.6^\circ}$;
+namely, the learning coefficients follow the envelope of the disturbance with
+a smaller amplitude and a small phase lag.
 
 \begin{figure}[tb]
 \centering
-\figplaceholder{Envelope of the 6.66~kHz disturbance and its estimate by the
-AFC, $-\Gp\thc$ (magnitude and phase)\\
-\todo{regenerate fig\_pq\_envelope for the loop-shaped AFC only, one column}}
+\includegraphics[width=\columnwidth]{figs/fig_pq_envelope_ls_fan66.pdf}
 \caption{Envelope of the disturbance at 6.66~kHz and the estimate by the AFC.}
 \label{fig:envelope}
 \end{figure}
@@ -349,8 +368,7 @@ are transferred to the foreground filter \cite{ochiai1977}.
 \centering
 \includegraphics[width=\columnwidth]{figs/fig_block_background_afc.pdf}
 \caption{Foreground AFC and background AFC during the seek and the coefficient
-transfer at the mode transition.
-\todo{remove the two text lines at the bottom of the figure}}
+transfer at the mode transition.}
 \label{fig:bg}
 \end{figure}
 
@@ -469,12 +487,27 @@ for disturbance rejection;
 \subsection{PES After Mode Transition}
 \begin{figure}[tb]
 \centering
-\figplaceholder{Time responses of the $3\sigma$ value of the PES around the
-mode transition (1000 sequences) for the four schemes\\
-\todo{to be computed; also $3\sigma$ over 0--1 ms, 0--2 ms and one revolution}}
-\caption{Time responses of the $3\sigma$ value of the PES for a 64-track seek.}
+\includegraphics[width=\columnwidth]{figs/fig_sigma_t_span64_c2.pdf}
+\caption{$3\sigma$ value of the PES caused by the disturbances for the 64-track
+seek (RT case, 1000 disturbance sequences).}
 \label{fig:sigma}
 \end{figure}
+
+Fig.~\ref{fig:sigma}(a) shows the time response of the $3\sigma$ value of the
+PES caused by the disturbances for the 64-track seek in the RT case, which is
+calculated from the 1000 sequences at each sample. During the seek, the
+$3\sigma$ value increases because the disturbance-rejection filters are not
+included in the feedback loop, and it returns to the steady-state value in
+track following after the mode transition. The proposed control scheme and the
+Switch scheme show the same response until the mode transition, and the
+proposed control scheme converges faster after it. Fig.~\ref{fig:sigma}(b)
+shows the $3\sigma$ values in each interval. In the first 0.5~ms after the mode
+transition, the $3\sigma$ value is 5.70~nm, 5.04~nm, and 4.76~nm for the Reset
+scheme, the Switch scheme, and the proposed control scheme, respectively. In
+the interval from 1.0~ms to 1.5~ms, the three schemes show almost the same
+values (4.59~nm, 4.38~nm, and 4.37~nm), which are close to the steady-state
+value of 4.31~nm. That is, the effect of the proposed control scheme appears
+in approximately 1~ms after the mode transition.
 
 \begin{table}[tb]
 \caption{Simulation Results (Worst Case Among LT, RT, and HT)}
@@ -506,9 +539,9 @@ Proposed   & \textbf{0.657} & \textbf{1.054} & \textbf{1.005} & \textbf{1.102} &
 \end{tabular}
 \end{table}
 
-Table~\ref{tab:result} summarizes the simulation results. Each value is the
-worst one among the LT, RT, and HT cases. The first index is the $3\sigma$
-value of the PES for 1~ms after the mode transition. The proposed control
+Table~\ref{tab:result} summarizes the simulation results for the six seek
+spans. Each value is the worst one among the LT, RT, and HT cases. The first
+index is the $3\sigma$ value of the PES for 1~ms after the mode transition. The proposed control
 scheme gives the smallest value for all the seek spans. Compared with the
 Reset scheme and the Switch scheme, the $3\sigma$ value is reduced by 7--13\%
 and 1--5\%, respectively.
