@@ -86,34 +86,27 @@ vibration induced by the fans, which contains components up to approximately
 10~kHz, is one of the dominant disturbances that degrade the positioning
 accuracy \cite{eguchi2009,eguchi2017,yabui2022}.
 
-To suppress such narrow-band disturbances, resonant filters are added to the
-feedback controller and designed by loop shaping
-\cite{atsumi2007,atsumi2026amc}. Adaptive
-feedforward cancellation (AFC) \cite{sacks1993,bodson1994} is a scheme that
-learns the coefficients of a sinusoidal compensation signal from the error
-signal, and it is known to be equivalent to a resonant filter in the feedback
-loop \cite{messner1995}. Introducing a forgetting factor into the adaptive
-algorithm yields the same effect as the damping term of the resonant filter
-\cite{yabui2013}. These filters are designed for track-following control, in
-which the head stays on one track.
+To suppress such narrow-band disturbances in track-following control,
+resonant filters designed by loop shaping are added to the feedback controller
+\cite{atsumi2007,atsumi2026amc}. Adaptive feedforward cancellation (AFC)
+\cite{sacks1993,bodson1994}, which learns the coefficients of a sinusoidal
+compensation signal from the error signal, is equivalent to a resonant filter
+\cite{messner1995}, and a forgetting factor in its adaptive algorithm
+corresponds to the damping of the filter \cite{yabui2013}.
 
-HDDs also perform track-seek control, in which the head moves to another
-track. During a track seek, a feedback controller for the seek and settling is
-used, and the inputs of the disturbance-rejection filters are switched off so
-that the filters are not excited by the large transient of the seek. The
-learned coefficients of the AFC then decay with the forgetting factor. The
-fan-induced vibration is not a periodic disturbance but a random narrow-band
-disturbance whose amplitude and phase drift with time. Consequently, the AFC
-has to learn the disturbance again after the feedback controller is changed to
-the one for track following, and the position error increases during this
-period. Since data can be written only while the position error stays within a
-threshold, this delays the start of data writing. For periodic disturbances, the
-authors have proposed an initial value compensation of the AFC for track-seek
-control \cite{yabui2025ivc}. Since the amplitude and the phase of a periodic
-disturbance do not change during the seek, that method does not require any
-measurement during the seek. For a random narrow-band disturbance, in contrast,
-the disturbance itself changes during the seek, and the learning coefficients
-have to be updated from the signal measured during the seek.
+During a track seek, a feedback controller for the seek and settling is used,
+and the inputs of the disturbance-rejection filters are switched off so that
+they are not excited by the transient of the seek. The learned coefficients of
+the AFC then decay with the forgetting factor. Since the fan-induced vibration
+is a random narrow-band disturbance whose amplitude and phase drift with time,
+the AFC has to learn the disturbance again after the controller is changed to
+the one for track following. The position error increases during this period,
+which delays the start of data writing. For periodic disturbances, the authors
+have proposed an initial value compensation of the AFC for track-seek control
+\cite{yabui2025ivc}, which does not require any measurement during the seek
+because a periodic disturbance does not change. For a random narrow-band
+disturbance, in contrast, the learning coefficients have to be updated from the
+signal measured during the seek.
 
 To address this issue, this paper proposes a control scheme using a background
 AFC. The key point of this study is that the position error during the seek
@@ -258,12 +251,11 @@ and the learning coefficients decay to 0.27 times in 0.84~ms with the Switch
 scheme. As a result, the AFC has to learn the disturbance again after the mode
 transition.
 
-The control performance is evaluated by the following indices. The settling
-time without disturbance, $t_\mathrm{hold}$, is the time after which the PES
-stays within $\pm 0.1$~track. With the disturbances, we evaluate the $3\sigma$
-value of the PES after the mode transition and the write-ready time
-$t_\mathrm{ready}$, which is defined as the first time from the start of the
-seek at which the PES stays within $\pm 0.1$~track for 0.5~ms.
+The performance is evaluated by the settling time without disturbance,
+$t_\mathrm{hold}$, after which the PES stays within $\pm 0.1$~track, and,
+with the disturbances, by the $3\sigma$ value of the PES and the write-ready
+time $t_\mathrm{ready}$, i.e., the first time from the start of the seek at
+which the PES stays within $\pm 0.1$~track for 0.5~ms.
 
 % ===========================================================================
 \section{AFC as Estimator of Disturbance Envelope}
@@ -386,15 +378,12 @@ and the foreground AFC operates by \eqref{eq:afc_cout} and
 \eqref{eq:afc_update} from $k = k_t$ in track following.
 
 The second term on the right-hand side of \eqref{eq:xeff} is an input
-correction. Since the output of the background AFC is not applied to the plant,
-$x(k)$ contains only the effect of the compensation signal of the foreground
-AFC, which is calculated from $\thc(k-1)$. The correction adds the change that
-would appear in $x(k)$ if the compensation signal of the background AFC were
-applied instead. As a result, the
-background AFC learns as if it were operating in the feedback loop, regardless
-of how the learning coefficients of the foreground AFC decay. This corresponds
-to the conditioning technique for bumpless transfer between controllers
-\cite{hanus1987,graebe1996,turner2000}.
+correction. Since only the compensation signal of the foreground AFC is applied
+to the plant, the correction adds the change that would appear in $x(k)$ if
+that of the background AFC were applied instead. The background AFC therefore
+learns as if it were in the feedback loop, regardless of how the coefficients
+of the foreground AFC decay. This corresponds to the conditioning technique for
+bumpless transfer \cite{hanus1987,graebe1996,turner2000}.
 
 Since the frequency response of the loop during the seek differs from that in
 track following, $G_f$, the step size and the phase designed for track
@@ -465,14 +454,9 @@ is omitted from the table of results. For each condition,
 all the schemes. The disturbance sequences used for calculating $\gamma_s$
 are different from those for the evaluation.
 
-The following four schemes were compared:
-\begin{itemize}
-\item \textit{No filters}: feedback controller without the resonant filters
-for disturbance rejection;
-\item \textit{Reset}: Reset scheme described in Section~II-D;
-\item \textit{Switch}: Switch scheme described in Section~II-D;
-\item \textit{Proposed}: Switch scheme with the background AFC.
-\end{itemize}
+Four schemes were compared: the controller without the resonant filters for
+disturbance rejection (No filters), the Reset and Switch schemes in
+Section~II-D, and the Switch scheme with the background AFC (Proposed).
 
 \subsection{PES After Mode Transition}
 \begin{figure}[tb]
@@ -542,8 +526,8 @@ $t_\mathrm{ready}$ over the 1000 sequences. The proposed control scheme
 shortens it by 9--23\% compared with the Reset scheme and by 0.4--8\% compared
 with the Switch scheme.
 
-Fig.~\ref{fig:ready} shows the percentiles of $t_\mathrm{ready}$ for the
-64-track seek in the RT case. The 90th percentile is 0.954~ms, 0.867~ms, and
+Fig.~\ref{fig:ready} shows the cumulative distribution of $t_\mathrm{ready}$
+for the 64-track seek in the RT case. The 90th percentile is 0.954~ms, 0.867~ms, and
 0.839~ms for the Reset scheme, the Switch scheme, and the proposed control
 scheme, respectively, and the 99th percentile is 1.330~ms, 1.244~ms, and
 1.185~ms. The median is almost the same (0.51~ms) for all the schemes,
@@ -559,10 +543,9 @@ improve the response for every sequence, but it is effective statistically.
 
 \begin{figure}[tb]
 \centering
-\includegraphics[width=\columnwidth]{figs/fig_ready_rt_percentile_span64.pdf}
-\caption{Percentiles of the write-ready time $t_\mathrm{ready}$ for the
-64-track seek (RT case, 1000 disturbance sequences). Marker: 90th percentile,
-bar: 50th to 99th percentile, vertical line: mode transition.}
+\includegraphics[width=\columnwidth]{figs/fig_ready_rt_cdf_span64.pdf}
+\caption{Cumulative distribution of the write-ready time $t_\mathrm{ready}$
+for the 64-track seek (RT case, 1000 disturbance sequences).}
 \label{fig:ready}
 \end{figure}
 
