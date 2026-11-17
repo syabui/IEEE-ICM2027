@@ -312,20 +312,10 @@ of the AFC can be regarded as an estimate of the envelope of the disturbance,
 and the product of $\lambda$ and $|\Gp|$ plays the role of the gain of the
 estimator.
 
-Fig.~\ref{fig:envelope} compares $\vartheta(k)$ of the AFC at 6.66~kHz with the
-envelope of the disturbance in track following, where only the mode at
-6.66~kHz is applied as the disturbance. The amplitude of $\vartheta(k)$ follows
-that of the envelope, and the mean of the phase error is $-10^\circ$. The
-regression coefficient of $\vartheta$ on $D$ is $0.64\angle{-10.6^\circ}$;
-namely, the learning coefficients follow the envelope of the disturbance with
-a smaller amplitude and a small phase lag.
-
-\begin{figure}[tb]
-\centering
-\includegraphics[width=\columnwidth]{figs/fig_pq_envelope_ls_fan66.pdf}
-\caption{Envelope of the disturbance at 6.66~kHz and the estimate by the AFC.}
-\label{fig:envelope}
-\end{figure}
+For the AFC at 6.66~kHz in track following, the regression coefficient of
+$\vartheta$ on $D$ obtained by simulation is $0.64\angle{-10.6^\circ}$ when the
+mode at 6.66~kHz is applied as the disturbance; namely, the learning
+coefficients follow the envelope of the disturbance.
 
 Two points follow from this viewpoint. First, since the envelope is correlated
 over a time longer than a short seek, an estimate obtained before or during the
@@ -525,11 +515,6 @@ Reset      & 6.49 & 7.03 & 7.31 & 6.34 & 6.66 & 6.82 \\
 Switch     & 5.92 & 6.62 & 6.97 & 5.90 & 6.24 & 6.43 \\
 Proposed   & \textbf{5.63} & \textbf{6.55} & \textbf{6.67} & \textbf{5.66} & \textbf{6.05} & \textbf{6.16} \\
 \midrule
-\multicolumn{7}{l}{\textit{Excess error caused by disturbances [nm$^2\cdot$ms]}}\\
-Reset      & 4.38 & 5.13 & 5.76 & 6.60 & 7.40 & 8.54 \\
-Switch     & 1.99 & 2.59 & 3.06 & 3.79 & 4.48 & 5.46 \\
-Proposed   & \textbf{1.70} & \textbf{2.34} & \textbf{2.78} & \textbf{3.44} & \textbf{4.10} & \textbf{5.07} \\
-\midrule
 \multicolumn{7}{l}{\textit{90th percentile of $t_\mathrm{ready}$ [ms]}}\\
 No filters & 1.431 & 2.494 & 3.340 & 2.298 & 2.870 & 3.298 \\
 Reset      & 0.857 & 1.219 & 1.182 & 1.303 & 1.570 & 1.719 \\
@@ -546,19 +531,13 @@ scheme gives the smallest value for all the seek spans. Compared with the
 Reset scheme and the Switch scheme, the $3\sigma$ value is reduced by 7--13\%
 and 1--5\%, respectively.
 
-The second index is the excess error, which is defined as the integral of
-$\sigma^2(t) - \sigma_{ss}^2$ from the start of the seek to 6~ms, where
-$\sigma(t)$ is the standard deviation of the PES caused by the disturbances at
-time $t$ and $\sigma_{ss}$ is its steady-state value in track following. The
-excess error of the proposed control scheme is 41--61\% smaller than that of
-the Reset scheme and 7--15\% smaller than that of the Switch scheme. Note
-that the proposed control scheme and the Switch scheme apply the same
+Note that the proposed control scheme and the Switch scheme apply the same
 compensation signal before the mode transition. Therefore, the difference
 between these two schemes is the effect of the learning by the background AFC
 during the seek.
 
 \subsection{Write-Ready Time}
-The third index in Table~\ref{tab:result} is the 90th percentile of
+The second index in Table~\ref{tab:result} is the 90th percentile of
 $t_\mathrm{ready}$ over the 1000 sequences. The proposed control scheme
 shortens it by 9--23\% compared with the Reset scheme and by 0.4--8\% compared
 with the Switch scheme. Fig.~\ref{fig:cdf} shows the distribution of
@@ -568,20 +547,16 @@ and the proposed control scheme, respectively. Without the resonant filters,
 more than 1\% of the sequences in the HT case do not satisfy the condition
 within the simulation time.
 
-The lower figures of Fig.~\ref{fig:cdf} show the difference in
-$t_\mathrm{ready}$ between the Reset scheme and the proposed control scheme
-for the same disturbance sequence. The proposed control scheme is faster by
-more than 0.05~ms in 25--38\% of the sequences and slower in 4--11\%. As
-described in Section~III, keeping the estimate does not improve the response
-for every sequence, but it is effective statistically.
+For the same disturbance sequence, the proposed control scheme is faster than
+the Reset scheme by more than 0.05~ms in 25--38\% of the sequences and slower
+in 4--11\%. As described in Section~III, keeping the estimate does not improve
+the response for every sequence, but it is effective statistically.
 
 \begin{figure*}[tb]
 \centering
-\includegraphics[width=0.9\textwidth]{figs/fig_ready_cdf_span64_poly.pdf}
-\caption{Distribution of the write-ready time $t_\mathrm{ready}$ for the
-64-track seek (1000 disturbance sequences). Upper: cumulative distribution.
-Lower: difference between the Reset scheme and the proposed control scheme for
-the same disturbance sequence.}
+\includegraphics[width=0.9\textwidth,trim=0 208bp 0 0,clip]{figs/fig_ready_cdf_span64_poly.pdf}
+\caption{Cumulative distribution of the write-ready time $t_\mathrm{ready}$
+for the 64-track seek (1000 disturbance sequences).}
 \label{fig:cdf}
 \end{figure*}
 
