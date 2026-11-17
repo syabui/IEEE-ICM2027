@@ -540,25 +540,31 @@ during the seek.
 The second index in Table~\ref{tab:result} is the 90th percentile of
 $t_\mathrm{ready}$ over the 1000 sequences. The proposed control scheme
 shortens it by 9--23\% compared with the Reset scheme and by 0.4--8\% compared
-with the Switch scheme. Fig.~\ref{fig:cdf} shows the distribution of
-$t_\mathrm{ready}$ for the 64-track seek. In the HT case, the 90th percentile
-is 1.182~ms, 1.097~ms, and 0.952~ms for the Reset scheme, the Switch scheme,
-and the proposed control scheme, respectively. Without the resonant filters,
-more than 1\% of the sequences in the HT case do not satisfy the condition
-within the simulation time.
+with the Switch scheme.
+
+Fig.~\ref{fig:ready} shows the percentiles of $t_\mathrm{ready}$ for the
+64-track seek in the RT case. The 90th percentile is 0.954~ms, 0.867~ms, and
+0.839~ms for the Reset scheme, the Switch scheme, and the proposed control
+scheme, respectively, and the 99th percentile is 1.330~ms, 1.244~ms, and
+1.185~ms. The median is almost the same (0.51~ms) for all the schemes,
+because in about half of the sequences the PES enters the threshold before the
+mode transition. The proposed control scheme thus shortens the upper tail of
+the distribution, which determines the delay of data writing. Without the
+resonant filters, the 99th percentile reaches 3.049~ms.
 
 For the same disturbance sequence, the proposed control scheme is faster than
-the Reset scheme by more than 0.05~ms in 25--38\% of the sequences and slower
-in 4--11\%. As described in Section~III, keeping the estimate does not improve
-the response for every sequence, but it is effective statistically.
+the Reset scheme by more than 0.05~ms in 25\% of the sequences and slower in
+4\% in this case. As described in Section~III, keeping the estimate does not
+improve the response for every sequence, but it is effective statistically.
 
-\begin{figure*}[tb]
+\begin{figure}[tb]
 \centering
-\includegraphics[width=0.9\textwidth,trim=0 208bp 0 0,clip]{figs/fig_ready_cdf_span64_poly.pdf}
-\caption{Cumulative distribution of the write-ready time $t_\mathrm{ready}$
-for the 64-track seek (1000 disturbance sequences).}
-\label{fig:cdf}
-\end{figure*}
+\includegraphics[width=\columnwidth]{figs/fig_ready_rt_percentile_span64.pdf}
+\caption{Percentiles of the write-ready time $t_\mathrm{ready}$ for the
+64-track seek (RT case, 1000 disturbance sequences). Marker: 90th percentile,
+bar: 50th to 99th percentile, vertical line: mode transition.}
+\label{fig:ready}
+\end{figure}
 
 \subsection{Seek Response Without Disturbance}
 The settling time without disturbance, $t_\mathrm{hold}$, of the proposed
