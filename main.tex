@@ -192,17 +192,7 @@ In the benchmark problem, the fan-induced vibration is modeled as the sum of
 13 second-order resonant modes from 2.2~kHz to 9.2~kHz, each of which is driven
 by white noise. Therefore, each component is not a periodic signal but a
 random narrow-band signal. The largest component is the mode at 6.66~kHz with
-a damping ratio of $\zeta_d = 0.008$. Fig.~\ref{fig:psd} shows the power
-spectral density (PSD) of the PES caused by the fan-induced vibration in the RT
-case. The resonant filters reduce the peaks of the PES at the frequencies of
-the modes.
-
-\begin{figure}[tb]
-\centering
-\includegraphics[width=\columnwidth,trim=0 0 0 151bp,clip]{figs/fig_fan_psd_2panel.pdf}
-\caption{PSD of the PES caused by the fan-induced vibration (RT case).}
-\label{fig:psd}
-\end{figure}
+a damping ratio of $\zeta_d = 0.008$.
 
 \subsection{AFC with Forgetting Factor}
 Among the 13 resonant filters, 11 filters have small damping ratios
@@ -295,7 +285,7 @@ Substituting \eqref{eq:innov} into \eqref{eq:afc_update} yields
 \label{eq:observer}
 \end{equation}
 Equation \eqref{eq:observer} has the same form as the steady-state Kalman
-predictor \cite{kalman1960,anderson1979} for the model \eqref{eq:ar1}: the
+predictor \cite{anderson1979} for the model \eqref{eq:ar1}: the
 estimate is multiplied by a forgetting factor and corrected by the difference
 between the measurement and the estimate. Therefore, the learning coefficients
 of the AFC can be regarded as an estimate of the envelope of the disturbance,
@@ -381,7 +371,7 @@ to the plant, the correction adds the change that would appear in $x(k)$ if
 that of the background AFC were applied instead. The background AFC therefore
 learns as if it were in the feedback loop, regardless of how the coefficients
 of the foreground AFC decay. This corresponds to the conditioning technique for
-bumpless transfer \cite{hanus1987,graebe1996,turner2000}.
+bumpless transfer \cite{hanus1987}.
 
 Since the frequency response of the loop during the seek differs from that in
 track following, $G_f$, the step size and the phase designed for track
@@ -481,14 +471,12 @@ values (4.59~nm, 4.38~nm, and 4.37~nm), which are close to the steady-state
 value of 4.31~nm. That is, the effect of the proposed control scheme appears
 in approximately 1~ms after the mode transition.
 
-Fig.~\ref{fig:headpos} shows the time responses for the 64-track seek in the
-RT case. Fig.~\ref{fig:headpos}(a) shows the head position, and
-Fig.~\ref{fig:headpos}(b)--(e) show the PES after the seek for 20 disturbance
-sequences, where the same sequences are used for all the schemes. The dashed
-line is the response without disturbance, and the shaded area indicates
-$\pm 0.1$~track. Without the resonant filters, the PES often exceeds
-$\pm 0.1$~track. With the Reset scheme, the amplitude of the PES just after
-the mode transition is larger than that with the Switch scheme and the
+Fig.~\ref{fig:headpos} shows the PES after the 64-track seek in the RT case
+for 20 disturbance sequences, where the same sequences are used for all the
+schemes. The dashed line is the response without disturbance, and the shaded
+area indicates $\pm 0.1$~track. Without the resonant filters, the PES often
+exceeds $\pm 0.1$~track. With the Reset scheme, the amplitude of the PES just
+after the mode transition is larger than that with the Switch scheme and the
 proposed control scheme, because the AFCs start learning from zero. The
 difference between the Switch scheme and the proposed control scheme is small
 in each waveform, which agrees with the difference in the $3\sigma$ values
@@ -497,10 +485,9 @@ reduction of the PES over many disturbance sequences.
 
 \begin{figure*}[tb]
 \centering
-\includegraphics[width=0.92\textwidth]{figs/fig_head_position_span64_c2.pdf}
-\caption{Time responses for the 64-track seek (RT case): (a) head position,
-(b)--(e) PES after the seek for 20 disturbance sequences. Dashed line: without
-disturbance; shaded area: $\pm 0.1$~track.}
+\includegraphics[width=\textwidth]{figs/fig_head_position_span64_c2_row.pdf}
+\caption{PES after the 64-track seek for 20 disturbance sequences (RT case).
+Dashed line: without disturbance; shaded area: $\pm 0.1$~track.}
 \label{fig:headpos}
 \end{figure*}
 
