@@ -56,14 +56,14 @@ which is equivalent to a resonant filter, is widely used to suppress
 narrow-band disturbances. During a track seek, however, the input of the AFC is
 switched off, and the learned coefficients decay. Since fan-induced vibration
 is a random narrow-band disturbance, the AFC has to learn the disturbance again
-after the seek, which increases the position error and delays the start of
-data writing. To address this issue, we introduce a background AFC, a copy of
+after the seek, which increases the position error after the seek. To address this issue, we introduce a background AFC, a copy of
 the AFC that keeps learning from the position error during the seek without
 being applied to the plant, and transfer its coefficients to the AFC at the
 mode transition. The control input during the seek is identical to that of the
 conventional scheme. Simulations on the HDD benchmark problem with 1000
 disturbance sequences show that the proposed scheme reduces the position error
-after the seek and shortens the time until data writing becomes possible.
+in approximately 1~ms after the mode transition, without changing the
+response up to the mode transition.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -101,7 +101,7 @@ the AFC then decay with the forgetting factor. Since the fan-induced vibration
 is a random narrow-band disturbance whose amplitude and phase drift with time,
 the AFC has to learn the disturbance again after the controller is changed to
 the one for track following. The position error increases during this period,
-which delays the start of data writing. For periodic disturbances, the authors
+which can delay the start of data writing. For periodic disturbances, the authors
 have proposed an initial value compensation of the AFC for track-seek control
 \cite{yabui2025ivc}, which does not require any measurement during the seek
 because a periodic disturbance does not change. For a random narrow-band
@@ -173,34 +173,34 @@ $F_V$ are connected by the switch $S$ in Fig.~\ref{fig:block}. They consist of
 and the closed-loop poles.
 
 Fig.~\ref{fig:sens} shows the gain of the sensitivity function in track
-following for the RT case with and without the disturbance-rejection filters.
-The vertical lines indicate the center frequencies of the filters. The filters
+following for the LT case with and without the disturbance-rejection filters.
+The vertical lines indicate the center frequencies of the AFCs. The filters
 lower the gain at the frequencies of the disturbances, whereas the maximum gain
-is almost unchanged: 5.92~dB without the filters and 5.97~dB with the filters.
+is almost unchanged: 5.99~dB without the filters and 6.13~dB with the filters.
 With these filters, the $3\sigma$ value of the PES in track following is
 4.45~nm in the worst case.
 
 \begin{figure}[tb]
 \centering
-\includegraphics[width=\columnwidth]{figs/fig_sensitivity_c2.pdf}
-\caption{Gain of the sensitivity function in track following (RT case).}
+\includegraphics[width=\columnwidth]{figs/fig_sensitivity_c1.pdf}
+\caption{Gain of the sensitivity function in track following (LT case).}
 \label{fig:sens}
 \end{figure}
 
 \subsection{Fan-Induced Vibration}
-Fig.~\ref{fig:psd}(a) shows the power spectral density (PSD) of the fan-induced
-vibration in the benchmark problem. The vibration is modeled as the sum of 13
-second-order resonant modes from 2.2~kHz to 9.2~kHz, each of which is driven by
-white noise. Therefore, each component is not a periodic signal but a random
-narrow-band signal. The largest component is the mode at 6.66~kHz with a
-damping ratio of $\zeta_d = 0.008$. Fig.~\ref{fig:psd}(b) shows the PSD of the
-PES caused by the fan-induced vibration. The resonant filters reduce the peaks
-of the PES at the frequencies of the modes.
+In the benchmark problem, the fan-induced vibration is modeled as the sum of
+13 second-order resonant modes from 2.2~kHz to 9.2~kHz, each of which is driven
+by white noise. Therefore, each component is not a periodic signal but a
+random narrow-band signal. The largest component is the mode at 6.66~kHz with
+a damping ratio of $\zeta_d = 0.008$. Fig.~\ref{fig:psd} shows the power
+spectral density (PSD) of the PES caused by the fan-induced vibration in the RT
+case. The resonant filters reduce the peaks of the PES at the frequencies of
+the modes.
 
 \begin{figure}[tb]
 \centering
-\includegraphics[width=\columnwidth]{figs/fig_fan_psd_2panel.pdf}
-\caption{PSD of the fan-induced vibration and the PES.}
+\includegraphics[width=\columnwidth,trim=0 0 0 151bp,clip]{figs/fig_fan_psd_2panel.pdf}
+\caption{PSD of the PES caused by the fan-induced vibration (RT case).}
 \label{fig:psd}
 \end{figure}
 
@@ -252,10 +252,8 @@ scheme. As a result, the AFC has to learn the disturbance again after the mode
 transition.
 
 The performance is evaluated by the settling time without disturbance,
-$t_\mathrm{hold}$, after which the PES stays within $\pm 0.1$~track, and,
-with the disturbances, by the $3\sigma$ value of the PES and the write-ready
-time $t_\mathrm{ready}$, i.e., the first time from the start of the seek at
-which the PES stays within $\pm 0.1$~track for 0.5~ms.
+$t_\mathrm{hold}$, after which the PES stays within $\pm 0.1$~track, and, with
+the disturbances, by the $3\sigma$ value of the PES after the mode transition.
 
 % ===========================================================================
 \section{AFC as Estimator of Disturbance Envelope}
@@ -483,6 +481,29 @@ values (4.59~nm, 4.38~nm, and 4.37~nm), which are close to the steady-state
 value of 4.31~nm. That is, the effect of the proposed control scheme appears
 in approximately 1~ms after the mode transition.
 
+Fig.~\ref{fig:headpos} shows the time responses for the 64-track seek in the
+RT case. Fig.~\ref{fig:headpos}(a) shows the head position, and
+Fig.~\ref{fig:headpos}(b)--(e) show the PES after the seek for 20 disturbance
+sequences, where the same sequences are used for all the schemes. The dashed
+line is the response without disturbance, and the shaded area indicates
+$\pm 0.1$~track. Without the resonant filters, the PES often exceeds
+$\pm 0.1$~track. With the Reset scheme, the amplitude of the PES just after
+the mode transition is larger than that with the Switch scheme and the
+proposed control scheme, because the AFCs start learning from zero. The
+difference between the Switch scheme and the proposed control scheme is small
+in each waveform, which agrees with the difference in the $3\sigma$ values
+described above; the effect of the proposed scheme appears as a statistical
+reduction of the PES over many disturbance sequences.
+
+\begin{figure*}[tb]
+\centering
+\includegraphics[width=0.92\textwidth]{figs/fig_head_position_span64_c2.pdf}
+\caption{Time responses for the 64-track seek (RT case): (a) head position,
+(b)--(e) PES after the seek for 20 disturbance sequences. Dashed line: without
+disturbance; shaded area: $\pm 0.1$~track.}
+\label{fig:headpos}
+\end{figure*}
+
 \begin{table}[tb]
 \caption{Simulation Results (Worst Case Among LT, RT, and HT)}
 \label{tab:result}
@@ -498,19 +519,14 @@ No filters & 8.18 & 9.28 & 9.39 & 8.40 & 9.02 & 8.91 \\
 Reset      & 6.49 & 7.03 & 7.31 & 6.34 & 6.66 & 6.82 \\
 Switch     & 5.92 & 6.62 & 6.97 & 5.90 & 6.24 & 6.43 \\
 Proposed   & \textbf{5.63} & \textbf{6.55} & \textbf{6.67} & \textbf{5.66} & \textbf{6.05} & \textbf{6.16} \\
-\midrule
-\multicolumn{7}{l}{\textit{90th percentile of $t_\mathrm{ready}$ [ms]}}\\
-No filters & 1.431 & 2.494 & 3.340 & 2.298 & 2.870 & 3.298 \\
-Reset      & 0.857 & 1.219 & 1.182 & 1.303 & 1.570 & 1.719 \\
-Switch     & 0.692 & 1.058 & 1.097 & 1.174 & 1.423 & 1.700 \\
-Proposed   & \textbf{0.657} & \textbf{1.054} & \textbf{1.005} & \textbf{1.102} & \textbf{1.314} & \textbf{1.569} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 Table~\ref{tab:result} summarizes the simulation results for the six seek
-spans. Each value is the worst one among the LT, RT, and HT cases. The first
-index is the $3\sigma$ value of the PES for 1~ms after the mode transition. The proposed control
+spans, namely the $3\sigma$ value of the PES for 1~ms after the mode
+transition. Each value is the worst one among the LT, RT, and HT cases. The
+proposed control
 scheme gives the smallest value for all the seek spans. Compared with the
 Reset scheme and the Switch scheme, the $3\sigma$ value is reduced by 7--13\%
 and 1--5\%, respectively.
@@ -519,35 +535,6 @@ Note that the proposed control scheme and the Switch scheme apply the same
 compensation signal before the mode transition. Therefore, the difference
 between these two schemes is the effect of the learning by the background AFC
 during the seek.
-
-\subsection{Write-Ready Time}
-The second index in Table~\ref{tab:result} is the 90th percentile of
-$t_\mathrm{ready}$ over the 1000 sequences. The proposed control scheme
-shortens it by 9--23\% compared with the Reset scheme and by 0.4--8\% compared
-with the Switch scheme.
-
-Fig.~\ref{fig:ready} shows the cumulative distribution of $t_\mathrm{ready}$
-for the 64-track seek in the RT case. The 90th percentile is 0.954~ms, 0.867~ms, and
-0.839~ms for the Reset scheme, the Switch scheme, and the proposed control
-scheme, respectively, and the 99th percentile is 1.330~ms, 1.244~ms, and
-1.185~ms. The median is almost the same (0.51~ms) for all the schemes,
-because in about half of the sequences the PES enters the threshold before the
-mode transition. The proposed control scheme thus shortens the upper tail of
-the distribution, which determines the delay of data writing. Without the
-resonant filters, the 99th percentile reaches 3.049~ms.
-
-For the same disturbance sequence, the proposed control scheme is faster than
-the Reset scheme by more than 0.05~ms in 25\% of the sequences and slower in
-4\% in this case. As described in Section~III, keeping the estimate does not
-improve the response for every sequence, but it is effective statistically.
-
-\begin{figure}[tb]
-\centering
-\includegraphics[width=\columnwidth]{figs/fig_ready_rt_cdf_span64.pdf}
-\caption{Cumulative distribution of the write-ready time $t_\mathrm{ready}$
-for the 64-track seek (RT case, 1000 disturbance sequences).}
-\label{fig:ready}
-\end{figure}
 
 \subsection{Seek Response Without Disturbance}
 The settling time without disturbance, $t_\mathrm{hold}$, of the proposed
@@ -577,11 +564,9 @@ during the seek is identical to that of the conventional Switch scheme.
 
 Simulation results on the HDD benchmark problem with 1000 disturbance
 sequences show that the proposed control scheme reduces the $3\sigma$ value of
-the PES for 1~ms after the mode transition by up to 13\% and the 90th
-percentile of the write-ready time by up to 23\% compared with the Reset
-scheme. Compared with the Switch scheme, the improvement is up to 5\% and 8\%,
-respectively, and the effect appears in approximately 1~ms after the mode
-transition. Future work will focus on the online adjustment of the learning
+the PES for 1~ms after the mode transition by up to 13\% compared with the
+Reset scheme and by up to 5\% compared with the Switch scheme, and the effect
+appears in approximately 1~ms after the mode transition. Future work will focus on the online adjustment of the learning
 gain during the seek, the use of a disturbance model for the compensation
 signal during the seek, and experimental verification.
 
