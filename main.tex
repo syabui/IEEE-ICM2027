@@ -95,9 +95,9 @@ compensation signal from the error signal, is equivalent to a resonant filter
 \cite{messner1995}, and a forgetting factor in its adaptive algorithm
 corresponds to the damping of the filter \cite{yabui2013}.
 
-During a track seek, a feedback controller for the seek and settling is used,
-and the inputs of the disturbance-rejection filters are switched off so that
-they are not excited by the transient of the seek. The learned coefficients of
+During a track seek, the inputs of the disturbance-rejection filters,
+including the AFCs, are switched off so that they are not excited by the
+transient of the seek. The learned coefficients of
 the AFC then decay with the forgetting factor. Since the fan-induced vibration
 is a random narrow-band disturbance whose amplitude and phase drift with time,
 the AFC has to learn the disturbance again after the controller is changed to
@@ -144,15 +144,14 @@ signal but a random narrow-band signal, such as the response of a lightly
 damped resonant mode driven by white noise, whose amplitude and phase drift
 with time.
 
-The feedback controller is changed according to the operation. During a large
-motion, such as a track seek in HDDs, a feedback controller for the seek and
-the settling is used together with a feedforward input, and the reference
-trajectory $r(k)$ is calculated from the nominal model of the plant. Such a
-two-degree-of-freedom structure is common in precision motion systems, e.g.,
-servomotors and wafer stages \cite{fujimoto2001,lambrechts2005,oomen2018}. After the
-settling, the feedback controller is changed to the one for regulation, i.e.,
-track following, which includes the AFCs for disturbance rejection. In this
-paper, this change is referred to as the mode transition.
+During a large motion, such as a track seek, a feedforward input is applied,
+and the reference trajectory $r(k)$ is calculated from the nominal model of the
+plant. Such a two-degree-of-freedom structure is common in precision motion
+systems, e.g., servomotors and wafer stages
+\cite{fujimoto2001,lambrechts2005,oomen2018}. The disturbance-rejection
+filters, which include the AFCs, are disconnected from the feedback loop during
+the seek and the settling, and are connected again for regulation, i.e., track
+following. In this paper, this change is referred to as the mode transition.
 
 \subsection{AFC with Forgetting Factor}
 The AFC for the angular frequency $\omega_0$ is formulated by the following
@@ -262,8 +261,9 @@ Section~IV-D.
 
 To address this issue, the proposed control scheme separates the learning from
 the compensation during the seek. Fig.~\ref{fig:bg} shows the block diagram,
-where the feedback controller for track following, which is the same as that
-in \cite{atsumi2026amc}, is omitted. The AFC whose output is applied to the plant is referred to as the foreground
+where the disturbance-rejection filters other than the AFC under
+consideration are omitted; the feedback controller is the same as that in
+\cite{atsumi2026amc}. The AFC whose output is applied to the plant is referred to as the foreground
 AFC, and its copy that only learns is referred to as the background AFC. This
 configuration follows the two-filter structure used in echo cancellers, in
 which the adaptation is performed in a background filter and its coefficients
@@ -271,7 +271,7 @@ are transferred to the foreground filter \cite{ochiai1977}.
 
 \begin{figure}[tb]
 \centering
-\includegraphics[width=\columnwidth]{figs/fig_block_background_afc.pdf}
+\includegraphics[width=\columnwidth]{figs/fig_block_background_afc_nosf.pdf}
 \caption{Foreground AFC and background AFC during the seek and the coefficient
 transfer at the mode transition.}
 \label{fig:bg}
@@ -288,7 +288,8 @@ x_\mathrm{eff}(k) &= x(k)
 \label{eq:bg}
 \end{align}
 Here, $G_s$ is the frequency response at $\omega_0$ from the output of the AFC
-to its input with the feedback controller for the seek. Let $k_0$ denote
+to its input during the seek, i.e., with the other disturbance-rejection
+filters disconnected. Let $k_0$ denote
 the sample at which the seek starts and $k_t = k_0 + N_s$ the sample of the
 mode transition. The background AFC starts from the learning coefficients of
 the foreground AFC, i.e., $\thch(k_0-1) = \thc(k_0-1)$, and is updated for
@@ -308,8 +309,8 @@ learns as if it were in the feedback loop, regardless of how the coefficients
 of the foreground AFC decay. This corresponds to the conditioning technique for
 bumpless transfer \cite{hanus1987}.
 
-Since the frequency response of the loop during the seek differs from that in
-track following, $G_f$, the step size and the phase designed for track
+Since $G_s$ differs from the frequency response in track following, $G_f$,
+which is obtained with all the other filters connected, the step size and the phase designed for track
 following are converted as
 \begin{equation}
 \lambda_s = \lambda \left|\frac{G_f}{G_s}\right|, \qquad
@@ -373,15 +374,14 @@ vary.
 
 \begin{figure}[tb]
 \centering
-\includegraphics[width=\columnwidth]{figs/fig_block_control_system.pdf}
-\caption{Block diagram of the head positioning control system.
-\todo{draft from the simulation kit; to be replaced by the final drawing}}
+\includegraphics[width=\columnwidth]{figs/fig_block_control_system_nosf.pdf}
+\caption{Block diagram of the head positioning control system.}
 \label{fig:block}
 \end{figure}
 
-During the seek and the settling, the controllers $R_{s,P}$ and $R_{s,V}$ of
-the benchmark problem are used together with the feedforward inputs, and the
-reference trajectory is calculated from the nominal (RT) model. The mode
+During the seek and the settling, the same controllers $C_P$ and $C_V$ are
+used without the disturbance-rejection filters, together with the feedforward
+inputs, and the reference trajectory is calculated from the nominal (RT) model. The mode
 transition is performed at 0.3~ms after the end of the reference trajectory.
 In track following, the disturbance-rejection filters $F_P$ and $F_V$ are
 connected by the switch $S$ in Fig.~\ref{fig:block}. They consist of two
@@ -434,13 +434,13 @@ $\omega_0/2\pi$ [Hz] & Actuator & $\zeta_a$ & $\zeta_d$ & $\eta^{N_s}$ & $\etad^
 2200 & VCM & 0.0062 & 0.008 & 0.93 & 0.91 & 0.007 \\
 3300 & VCM & 0.0071 & 0.005 & 0.88 & 0.92 & 0.05 \\
 3545 & VCM & 0.0085 & 0.005 & 0.85 & 0.91 & 0.13 \\
-3980 & VCM & 0.0107 & 0.002 & 0.80 & 0.96 & 0.74 \\
-4380 & VCM & 0.0068 & 0.008 & 0.85 & 0.83 & 0.32 \\
+3980 & VCM & 0.0107 & 0.002 & 0.80 & 0.96 & 0.73 \\
+4380 & VCM & 0.0068 & 0.008 & 0.85 & 0.83 & 0.31 \\
 5072 & PZT & 0.0066 & 0.002 & 0.84 & 0.95 & 0.14 \\
-5370 & PZT & 0.0063 & 0.003 & 0.83 & 0.92 & 0.22 \\
-5850 & PZT & 0.0125 & 0.040 & 0.68 & 0.29 & 0.49 \\
-6660 & PZT & 0.0378 & 0.008 & 0.26 & 0.75 & 0.70 \\
-7670 & PZT & 0.0043 & 0.003 & 0.84 & 0.88 & 0.80 \\
+5370 & PZT & 0.0063 & 0.003 & 0.83 & 0.92 & 0.23 \\
+5850 & PZT & 0.0125 & 0.040 & 0.68 & 0.29 & 0.57 \\
+6660 & PZT & 0.0378 & 0.008 & 0.26 & 0.75 & 0.77 \\
+7670 & PZT & 0.0043 & 0.003 & 0.84 & 0.88 & 0.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -450,10 +450,8 @@ The controlled object, the disturbances (rotational vibration, fan-induced
 vibration, and repeatable runout), and the evaluation of the benchmark problem
 were used without modification, with the polynomial-trajectory feedforward
 input.
-Six seek spans from 4 to 1024 tracks were evaluated for the LT, RT, and HT
-cases. A 128-track seek, whose time of the mode transition is the same as that of
-the 64-track seek with this feedforward input, is omitted from the table of
-results because the indices for the disturbances coincide. For each
+Seven seek spans from 4 to 1024 tracks were evaluated for the LT, RT, and HT
+cases. For each
 condition, 1000 disturbance sequences were used, and the same sequences were
 applied to all the schemes. Four schemes were compared: the controller without
 the resonant filters for disturbance rejection (No filters), the Reset and
@@ -469,12 +467,12 @@ actuators, and the expectation is calculated from 200 other disturbance
 sequences. As listed in Table~\ref{tab:afc}, $\gamma_s$ is small for the AFCs
 at 2.2~kHz and 3.3~kHz, where the seek response is sensitive to the model
 error. The phase difference between $G_f$ and $G_s$ in \eqref{eq:conv} is up
-to approximately $40^\circ$.
+to approximately $38^\circ$.
 
 \subsection{PES After Mode Transition}
 \begin{figure}[tb]
 \centering
-\includegraphics[width=\columnwidth]{figs/fig_sigma_t_span64_c2.pdf}
+\includegraphics[width=\columnwidth]{figs/fig_sigma_t_span64_c2_nosf.pdf}
 \caption{$3\sigma$ value of the PES caused by the disturbances for the 64-track
 seek (RT case, 1000 disturbance sequences).}
 \label{fig:sigma}
@@ -489,7 +487,7 @@ track following after the mode transition. The proposed control scheme and the
 Switch scheme show the same response until the mode transition, and the
 proposed control scheme converges faster after it. Fig.~\ref{fig:sigma}(b)
 shows the $3\sigma$ values in each interval. In the first 0.5~ms after the mode
-transition, the $3\sigma$ value is 5.70~nm, 5.04~nm, and 4.76~nm for the Reset
+transition, the $3\sigma$ value is 5.80~nm, 5.13~nm, and 4.81~nm for the Reset
 scheme, the Switch scheme, and the proposed control scheme, respectively. In
 the interval from 1.0~ms to 1.5~ms, the three schemes show almost the same
 values (4.59~nm, 4.38~nm, and 4.37~nm), which are close to the steady-state
@@ -510,38 +508,37 @@ reduction of the PES over many disturbance sequences.
 
 \begin{figure*}[tb]
 \centering
-\includegraphics[width=\textwidth]{figs/fig_head_position_span64_c2_row.pdf}
+\includegraphics[width=\textwidth]{figs/fig_head_position_span64_c2_nosf_row.pdf}
 \caption{PES after the 64-track seek for 20 disturbance sequences (RT case).
 Dashed line: without disturbance; shaded area: $\pm 0.1$~track.}
 \label{fig:headpos}
 \end{figure*}
 
 \begin{table}[tb]
-\caption{Simulation Results (Worst Case Among LT, RT, and HT)}
+\caption{$3\sigma$ of PES for 1 ms After Mode Transition [nm] (Worst Case Among LT, RT, and HT)}
 \label{tab:result}
 \centering
 \footnotesize
 \setlength{\tabcolsep}{4pt}
-\begin{tabular}{lcccccc}
+\begin{tabular}{lccccccc}
 \toprule
-Seek span [track] & 4 & 16 & 64 & 256 & 512 & 1024 \\
+Seek span [track] & 4 & 16 & 64 & 128 & 256 & 512 & 1024 \\
 \midrule
-\multicolumn{7}{l}{\textit{$3\sigma$ of PES for 1 ms after mode transition [nm]}}\\
-No filters & 8.18 & 9.28 & 9.39 & 8.40 & 9.02 & 8.91 \\
-Reset      & 6.49 & 7.03 & 7.31 & 6.34 & 6.66 & 6.82 \\
-Switch     & 5.92 & 6.62 & 6.97 & 5.90 & 6.24 & 6.43 \\
-Proposed   & \textbf{5.63} & \textbf{6.55} & \textbf{6.67} & \textbf{5.66} & \textbf{6.05} & \textbf{6.16} \\
+No filters & 8.32 & 9.39 & 9.51 & 11.08 & 8.53 & 9.05 & 9.03 \\
+Reset      & 6.66 & 7.20 & 7.38 & 8.77 & 6.50 & 6.71 & 6.93 \\
+Switch     & 6.09 & 6.69 & 7.04 & 8.51 & 6.05 & 6.29 & 6.53 \\
+Proposed   & \textbf{5.83} & \textbf{6.53} & \textbf{6.74} & \textbf{8.26} & \textbf{5.79} & \textbf{6.06} & \textbf{6.24} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-Table~\ref{tab:result} summarizes the simulation results for the six seek
+Table~\ref{tab:result} summarizes the simulation results for the seven seek
 spans, namely the $3\sigma$ value of the PES for 1~ms after the mode
 transition. Each value is the worst one among the LT, RT, and HT cases. The
 proposed control
 scheme gives the smallest value for all the seek spans. Compared with the
-Reset scheme and the Switch scheme, the $3\sigma$ value is reduced by 7--13\%
-and 1--5\%, respectively.
+Reset scheme and the Switch scheme, the $3\sigma$ value is reduced by 6--13\%
+and 2--4\%, respectively.
 
 Note that the proposed control scheme and the Switch scheme apply the same
 compensation signal before the mode transition. Therefore, the difference
@@ -549,23 +546,14 @@ between these two schemes is the effect of the learning by the background AFC
 during the seek.
 
 \subsection{Seek Response Without Disturbance}
-The settling time without disturbance, $t_\mathrm{hold}$, of the proposed
-control scheme is the same as that of the other schemes for the six seek spans
-in Table~\ref{tab:result} (0.247~ms to 1.119~ms in the worst case). This is
+The settling time without disturbance, $t_\mathrm{hold}$, and the maximum input
+of the PZT actuator are the same for the four schemes at all the seek spans and
+cases ($t_\mathrm{hold}$: 0.366~ms to 1.316~ms in the worst case). This is
 because the compensation signal before the mode transition is not changed and
-$\gamma_s$ limits the learning of the error caused by the model error.
-For the 128-track seek, in contrast, $t_\mathrm{hold}$ in the LT case
-increased from 0.623~ms to 0.941~ms. In this condition, the residual vibration
-just after the mode transition is 0.0935~track even without the background
-AFC, which is close to the threshold of 0.1~track, and the transferred
-coefficients raise it to 0.1057~track. This shows that the transferred
-coefficients can still contain a small component learned from the error caused
-by the model error, and reducing it is left for future work.
-
-When the AFCs are instead kept in the feedback loop during the seek,
-$t_\mathrm{hold}$ for the 256-track seek increases from 0.773~ms to 1.438~ms,
-and the input of the PZT actuator for the 512-track seek exceeds the limit of
-50~nm (53.9~nm, LT case).
+$\gamma_s$ limits the learning of the error caused by the model error. When the
+AFCs are instead kept in the feedback loop during the seek, $t_\mathrm{hold}$
+for the 128-track seek increases from 0.645~ms to 2.453~ms and that for the
+256-track seek from 0.935~ms to 1.432~ms.
 
 % ===========================================================================
 \section{Conclusion}
@@ -582,7 +570,7 @@ during the seek is identical to that of the conventional Switch scheme.
 Simulation results on the HDD benchmark problem with 1000 disturbance
 sequences show that the proposed control scheme reduces the $3\sigma$ value of
 the PES for 1~ms after the mode transition by up to 13\% compared with the
-Reset scheme and by up to 5\% compared with the Switch scheme, and the effect
+Reset scheme and by up to 4\% compared with the Switch scheme, and the effect
 appears in approximately 1~ms after the mode transition. Future work will focus on the online adjustment of the learning
 gain during the seek, the use of a disturbance model for the compensation
 signal during the seek, and experimental verification.
