@@ -6,6 +6,7 @@
 \usepackage{textcomp}
 \usepackage{xcolor}
 \usepackage{booktabs}
+\usepackage{url}
 
 % ---------------------------------------------------------------------------
 % Drafting aids. Set \drafttrue to show outline notes in the PDF,
@@ -234,19 +235,15 @@ applied. From \eqref{eq:afc_update}, the learning coefficients decay as
 \thc(k) = \eta\,\thc(k-1). \label{eq:switch}
 \end{equation}
 \end{itemize}
-From the viewpoint of Section~II-C, two points follow. First, when the
-correlation time of the envelope is longer than the seek, an estimate obtained
-before or during the seek is still useful after the seek. However, the Reset
-scheme discards it, and with the Switch scheme the learning coefficients decay
-faster than the envelope decorrelates when the damping of the AFC is chosen
-larger than that of the disturbance ($\zeta_a > \zeta_d$, i.e.,
-$\eta < \etad$) to obtain a sufficient bandwidth. As a result, the AFC has to
-learn the disturbance again after the mode transition. Second, the gain of the
-estimator should be lowered when the measurement is less reliable, as in the
-Kalman filter. Note that a coefficient kept through the seek improves the
-compensation on average but not for every disturbance sequence, because the
-envelope changes randomly. The schemes are therefore compared statistically in
-Section~IV.
+From the viewpoint of Section~II-C, when the correlation time of the envelope
+is longer than the seek, an estimate obtained before the seek is still useful
+after it. However, the Reset scheme discards it, and with the Switch scheme the
+learning coefficients decay faster than the envelope decorrelates when
+$\zeta_a > \zeta_d$, i.e., $\eta < \etad$. The AFC then has to learn the
+disturbance again after the mode transition. Since the envelope changes
+randomly, a kept estimate improves the compensation on average but not for
+every disturbance sequence; the schemes are therefore compared statistically
+in Section~IV.
 
 % ===========================================================================
 \section{Proposed Control Scheme}
@@ -388,11 +385,9 @@ reference trajectory is calculated from the nominal (RT) model. The mode
 transition is performed at 0.3~ms after the end of the reference trajectory.
 In track following, the disturbance-rejection filters $F_P$ and $F_V$ are
 connected by the switch $S$ in Fig.~\ref{fig:block}. They consist of two
-loop-shaping filters, which shape the sensitivity function at 4.22~kHz and
-12.02~kHz, and 11 AFCs for the disturbance rejection, which are the target of
-this paper. All the filters were designed by the loop-shaping method
-\cite{atsumi2026amc} under constraints on the gain of the sensitivity function
-and the closed-loop poles. Since the AFC in Section~II-B can be equivalently
+loop-shaping filters (4.22~kHz and 12.02~kHz) and 11 AFCs for the disturbance
+rejection, which are the target of this paper, designed by the loop-shaping
+method \cite{atsumi2026amc}. Since the AFC in Section~II-B can be equivalently
 converted into a transfer function, i.e., a resonant filter
 \cite{messner1995,yabui2013}, its effect on the feedback loop can be
 evaluated in the frequency domain, e.g., by the sensitivity function
@@ -418,8 +413,9 @@ With these filters, the $3\sigma$ value of the PES in track following is
 In the benchmark problem, the fan-induced vibration is modeled as the sum of
 13 second-order resonant modes from 2.2~kHz to 9.2~kHz, each of which is driven
 by white noise. Table~\ref{tab:afc} lists the 11 AFCs together with the damping
-ratios of the target disturbances. For the 64-track seek, the input of the AFCs
-is switched off for $N_s = 43$ samples (0.86~ms). For the AFC at 6.66~kHz,
+ratios of the target disturbances. In the table, RV denotes the rotational vibration, and $\eta^{N_s}$,
+$\etad^{N_s}$, and $\gamma_s$ are for the 64-track seek, in which the input of
+the AFCs is switched off for $N_s = 43$ samples (0.86~ms). For the AFC at 6.66~kHz,
 which targets the largest mode, the learning coefficients decay to 0.26 times
 with the Switch scheme, whereas the correlation of the envelope over the same
 time is 0.75.
@@ -428,7 +424,7 @@ time is 0.75.
 \caption{AFCs in the Feedback Controller for Track Following}
 \label{tab:afc}
 \centering
-\footnotesize
+\scriptsize
 \setlength{\tabcolsep}{4pt}
 \begin{tabular}{rcccccc}
 \toprule
@@ -446,20 +442,18 @@ $\omega_0/2\pi$ [Hz] & Actuator & $\zeta_a$ & $\zeta_d$ & $\eta^{N_s}$ & $\etad^
 6660 & PZT & 0.0378 & 0.008 & 0.26 & 0.75 & 0.70 \\
 7670 & PZT & 0.0043 & 0.003 & 0.84 & 0.88 & 0.80 \\
 \bottomrule
-\multicolumn{7}{l}{\scriptsize RV: rotational vibration. $N_s$ and $\gamma_s$: 64-track seek.}
 \end{tabular}
 \end{table}
 
 \subsection{Simulation Conditions}
-The controlled object, the disturbances, and the evaluation of the benchmark
-problem were used without modification. The disturbances consist of the
-rotational vibration, the fan-induced vibration, and the repeatable runout. The
-feedforward input for the seek is the one based on the polynomial trajectory.
+The controlled object, the disturbances (rotational vibration, fan-induced
+vibration, and repeatable runout), and the evaluation of the benchmark problem
+were used without modification, with the polynomial-trajectory feedforward
+input.
 Six seek spans from 4 to 1024 tracks were evaluated for the LT, RT, and HT
-cases. A 128-track seek was also simulated; since its seek time and the time of
-the mode transition are the same as those of the 64-track seek with this
-feedforward input, the indices for the disturbances coincide with those of the
-64-track seek, and it is omitted from the table of results. For each
+cases. A 128-track seek, whose time of the mode transition is the same as that of
+the 64-track seek with this feedforward input, is omitted from the table of
+results because the indices for the disturbances coincide. For each
 condition, 1000 disturbance sequences were used, and the same sequences were
 applied to all the schemes. Four schemes were compared: the controller without
 the resonant filters for disturbance rejection (No filters), the Reset and
@@ -469,15 +463,13 @@ disturbance, $t_\mathrm{hold}$, after which the PES stays within
 $\pm 0.1$~track, and, with the disturbances, by the $3\sigma$ value of the PES
 after the mode transition.
 
-For the gain $\gamma_s$ in \eqref{eq:gamma}, $U$ consists of 12 models, namely
-the LT and HT cases and 10 models in which the resonance frequencies and the
-damping ratios of the VCM and the PZT actuator are varied, and the expectation
-is calculated from 200 disturbance sequences different from those for the
-evaluation. The values of $\gamma_s$ for the 64-track seek are listed in
-Table~\ref{tab:afc}; $\gamma_s$ is small for the AFCs on the VCM side at
-2.2~kHz and 3.3~kHz, where the seek response is sensitive to the model error.
-The phase difference between $G_f$ and $G_s$
-in \eqref{eq:conv} is up to approximately $40^\circ$.
+For $\gamma_s$ in \eqref{eq:gamma}, $U$ consists of the LT and HT cases and
+10 models with varied resonance frequencies and damping ratios of the
+actuators, and the expectation is calculated from 200 other disturbance
+sequences. As listed in Table~\ref{tab:afc}, $\gamma_s$ is small for the AFCs
+at 2.2~kHz and 3.3~kHz, where the seek response is sensitive to the model
+error. The phase difference between $G_f$ and $G_s$ in \eqref{eq:conv} is up
+to approximately $40^\circ$.
 
 \subsection{PES After Mode Transition}
 \begin{figure}[tb]
@@ -570,12 +562,10 @@ coefficients raise it to 0.1057~track. This shows that the transferred
 coefficients can still contain a small component learned from the error caused
 by the model error, and reducing it is left for future work.
 
-For comparison, when the AFCs are kept in the feedback loop during the seek,
+When the AFCs are instead kept in the feedback loop during the seek,
 $t_\mathrm{hold}$ for the 256-track seek increases from 0.773~ms to 1.438~ms,
-and the input of the PZT actuator for the 512-track seek reaches 53.9~nm in the
-LT case, which exceeds the limit of 50~nm in the benchmark problem. This
-confirms the need to separate the learning from the compensation during the
-seek.
+and the input of the PZT actuator for the 512-track seek exceeds the limit of
+50~nm (53.9~nm, LT case).
 
 % ===========================================================================
 \section{Conclusion}
