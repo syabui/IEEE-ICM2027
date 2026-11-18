@@ -131,127 +131,55 @@ the same disturbances.
 \end{itemize}
 
 % ===========================================================================
-\section{Head Positioning Control System of HDD}
+\section{AFC for Random Narrow-Band Disturbance}
 % ===========================================================================
 
-\subsection{Control System}
-Fig.~\ref{fig:block} shows a block diagram of the head positioning control
-system. The control system is created from the HDD benchmark problem for
-track-seek control established by the committee of the IEEJ Industry
-Applications Society \cite{ieej_benchmark}. The control system employs a
-dual-stage actuator system composed of the VCM (subscript $V$) and the PZT
-actuator (subscript $P$), where $P_V$, $P_P$ and $C_V$, $C_P$ are the actuator
-models and the feedback controllers, respectively. The controllers are
-connected in the decoupled structure \cite{li2000,yabui2020}, in which the
-displacement of the PZT actuator estimated by the model $D_P \approx P_P$ is
-added to the input of the VCM controller. In addition, $r(k)$ is the reference
-signal, $e(k)$ is the position error signal (PES), $y(k)$ is the head
-position, and $d(k)$ is the disturbance. The sampling time is
-$\Ts = 19.84~\mu$s, and $k$ is the sample number. The benchmark problem
-provides three cases of the controlled object, namely the low-temperature (LT),
-room-temperature (RT), and high-temperature (HT) cases, in which the resonance
-frequencies and the damping ratios of the actuators vary.
+\subsection{Control System and Mode Transition}
+Consider a sampled-data feedback control system with the sampling time $\Ts$
+and the sample number $k$, in which $r(k)$, $e(k)$, $y(k)$, and $d(k)$ denote
+the reference signal, the error signal, the output, and the disturbance,
+respectively. The disturbance considered in this paper is not a periodic
+signal but a random narrow-band signal, such as the response of a lightly
+damped resonant mode driven by white noise, whose amplitude and phase drift
+with time.
 
-\begin{figure}[tb]
-\centering
-\includegraphics[width=\columnwidth]{figs/fig_block_control_system.pdf}
-\caption{Block diagram of the head positioning control system.
-\todo{draft from the simulation kit; to be replaced by the final drawing}}
-\label{fig:block}
-\end{figure}
-
-The feedback controller is changed according to the operation. During the seek
-and the settling, the controllers $R_{s,P}$ and $R_{s,V}$ of the benchmark
-problem are used together with a feedforward input and the reference
-trajectory $r(k)$ calculated from the nominal (RT) model. At 0.3~ms after the
-end of the reference trajectory, the feedback controller is changed to the one
-for track following. In this paper, this change is referred to as the mode
-transition. In track following, the disturbance-rejection filters $F_P$ and
-$F_V$ are connected by the switch $S$ in Fig.~\ref{fig:block}. They consist of
-13 resonant filters in total, which were designed by the loop-shaping method
-\cite{atsumi2026amc} under constraints on the gain of the sensitivity function
-and the closed-loop poles.
-
-Fig.~\ref{fig:sens} shows the gain of the sensitivity function in track
-following for the LT case with and without the disturbance-rejection filters.
-The vertical lines indicate the center frequencies of the AFCs. The filters
-lower the gain at the frequencies of the disturbances, whereas the maximum gain
-is almost unchanged: 5.99~dB without the filters and 6.13~dB with the filters.
-With these filters, the $3\sigma$ value of the PES in track following is
-4.45~nm in the worst case.
-
-\begin{figure}[tb]
-\centering
-\includegraphics[width=\columnwidth]{figs/fig_sensitivity_c1.pdf}
-\caption{Gain of the sensitivity function in track following (LT case).}
-\label{fig:sens}
-\end{figure}
-
-\subsection{Fan-Induced Vibration}
-In the benchmark problem, the fan-induced vibration is modeled as the sum of
-13 second-order resonant modes from 2.2~kHz to 9.2~kHz, each of which is driven
-by white noise. Therefore, each component is not a periodic signal but a
-random narrow-band signal. The largest component is the mode at 6.66~kHz with
-a damping ratio of $\zeta_d = 0.008$.
+The feedback controller is changed according to the operation. During a large
+motion, such as a track seek in HDDs, a feedback controller for the seek and
+the settling is used together with a feedforward input, and the reference
+trajectory $r(k)$ is calculated from the nominal model of the plant. After the
+settling, the feedback controller is changed to the one for regulation, i.e.,
+track following, which includes the AFCs for disturbance rejection. In this
+paper, this change is referred to as the mode transition.
 
 \subsection{AFC with Forgetting Factor}
-Among the 13 resonant filters, 11 filters have small damping ratios
-($\zeta_a \le 0.05$) and are equivalent to AFCs with a forgetting
-factor \cite{yabui2013}; they are treated as AFCs in this paper. The AFC for the angular
-frequency $\omega_0$ is formulated by the following algorithm:
+The AFC for the angular frequency $\omega_0$ is formulated by the following
+algorithm \cite{yabui2013}:
 \begin{align}
 u(k) &= p(k-1)\cos(\Omega k) + q(k-1)\sin(\Omega k), \label{eq:afc_out}\\
 p(k) &= \eta\, p(k-1) + \lambda\, x(k)\cos(\Omega k + \theta), \label{eq:afc_p}\\
 q(k) &= \eta\, q(k-1) + \lambda\, x(k)\sin(\Omega k + \theta). \label{eq:afc_q}
 \end{align}
-Here, $u(k)$ is the compensation signal, $x(k)$ is the input of the AFC, and
-$\Omega = \omega_0 \Ts$. The AFCs are placed in the feedback controller of the
-VCM or the PZT actuator, and $x(k)$ is the signal at that point of the
-controller, which is generated from the PES. The learning coefficients $p(k)$
-and $q(k)$ are updated at every sample, and the compensation signal at sample
-$k$ is calculated from the coefficients obtained at the previous sample. The parameters $\lambda$ and $\theta$ are
-the step size and the phase, respectively, and
-$\eta = e^{-\zeta_a \omega_0 \Ts}$ is the forgetting factor, where $\zeta_a$
-corresponds to the damping ratio of the equivalent resonant filter. For ease
-of description, the learning coefficients are represented by the complex
-number $\thc(k) = p(k) - jq(k)$. Then,
-\eqref{eq:afc_out}--\eqref{eq:afc_q} are written as
+Here, $u(k)$ is the compensation signal, $\Omega = \omega_0 \Ts$, and $x(k)$
+is the input of the AFC, i.e., the signal generated from $e(k)$ at the point
+of the feedback controller where the AFC is placed. The learning coefficients
+$p(k)$ and $q(k)$ are updated at every sample, and the compensation signal at
+sample $k$ is calculated from the coefficients obtained at the previous
+sample. The parameters $\lambda$ and $\theta$ are the step size and the phase,
+respectively, and $\eta = e^{-\zeta_a \omega_0 \Ts}$ is the forgetting factor,
+where $\zeta_a$ corresponds to the damping ratio of the equivalent resonant
+filter \cite{messner1995,yabui2013}. For ease of description, the learning
+coefficients are represented by the complex number $\thc(k) = p(k) - jq(k)$.
+Then, \eqref{eq:afc_out}--\eqref{eq:afc_q} are written as
 \begin{align}
 u(k) &= \re\{\thc(k-1) e^{j\Omega k}\}, \label{eq:afc_cout}\\
 \thc(k) &= \eta\,\thc(k-1) + \lambda\, x(k)\, e^{-j(\Omega k + \theta)}.
 \label{eq:afc_update}
 \end{align}
 
-\subsection{Handling of AFC During Track Seek}
-During the seek and the settling, the AFCs are not included in the feedback
-loop, and two schemes are available for handling the learning coefficients.
-\begin{itemize}
-\item \textit{Reset}: The learning coefficients are set to zero at the start of
-the seek, and the learning starts again at the mode transition.
-\item \textit{Switch}: The input of the AFC is switched off, i.e., $x(k) = 0$,
-during the seek and the settling, and the compensation signal is still
-applied. From \eqref{eq:afc_update}, the learning coefficients decay as
-\begin{equation}
-\thc(k) = \eta\,\thc(k-1). \label{eq:switch}
-\end{equation}
-\end{itemize}
-In both schemes, the information on the disturbance is lost during the seek.
-For example, the forgetting factor of the AFC at 6.66~kHz is $\eta = 0.9691$,
-and the learning coefficients decay to 0.27 times in 0.84~ms with the Switch
-scheme. As a result, the AFC has to learn the disturbance again after the mode
-transition.
-
-The performance is evaluated by the settling time without disturbance,
-$t_\mathrm{hold}$, after which the PES stays within $\pm 0.1$~track, and, with
-the disturbances, by the $3\sigma$ value of the PES after the mode transition.
-
-% ===========================================================================
-\section{AFC as Estimator of Disturbance Envelope}
-% ===========================================================================
-
-This section describes what the learning coefficients of the AFC represent for
-a random narrow-band disturbance. This viewpoint is the basis of the proposed
-control scheme.
+\subsection{AFC as Estimator of Disturbance Envelope}
+This subsection describes what the learning coefficients of the AFC represent
+for a random narrow-band disturbance. This viewpoint is the basis of the
+proposed control scheme.
 
 The disturbance component around $\omega_0$ at the input of the AFC is written
 with a complex envelope $D(k)$ as
@@ -266,65 +194,72 @@ D(k) = \etad D(k-1) + v(k), \qquad \etad = e^{-\zeta_d \omega_0 \Ts},
 \label{eq:ar1}
 \end{equation}
 where $v(k)$ is white noise. That is, the amplitude and the phase of the
-disturbance drift with the correlation time $1/(\zeta_d \omega_0)$, which is
-3.0~ms for the mode at 6.66~kHz.
+disturbance drift with the correlation time $1/(\zeta_d \omega_0)$.
 
 Let $\Gp$ denote the frequency response at $\omega_0$ from the output of the
 AFC to its input. The component of $x(k)$ cancelled by the AFC is then
 represented by the envelope $\vartheta(k) = -\Gp \thc(k)$. Multiplying $x(k)$
 by $2e^{-j\Omega k}$ and neglecting the component at $2\Omega$, we obtain
 \begin{equation}
-y(k) = 2x(k) e^{-j\Omega k} \simeq D(k) - \vartheta(k-1) + w(k),
+y_D(k) = 2x(k) e^{-j\Omega k} \simeq D(k) - \vartheta(k-1) + w(k),
 \label{eq:innov}
 \end{equation}
 where $w(k)$ represents the other disturbance components around $\omega_0$.
 Substituting \eqref{eq:innov} into \eqref{eq:afc_update} yields
 \begin{equation}
 \vartheta(k) = \eta\,\vartheta(k-1)
- - \frac{\lambda}{2}\,\Gp e^{-j\theta}\, y(k).
+ - \frac{\lambda}{2}\,\Gp e^{-j\theta}\, y_D(k).
 \label{eq:observer}
 \end{equation}
 Equation \eqref{eq:observer} has the same form as the steady-state Kalman
-predictor \cite{anderson1979} for the model \eqref{eq:ar1}: the
-estimate is multiplied by a forgetting factor and corrected by the difference
-between the measurement and the estimate. Therefore, the learning coefficients
-of the AFC can be regarded as an estimate of the envelope of the disturbance,
-and the product of $\lambda$ and $|\Gp|$ plays the role of the gain of the
-estimator.
+predictor \cite{anderson1979} for the model \eqref{eq:ar1}: the estimate is
+multiplied by a forgetting factor and corrected by the difference between the
+measurement and the estimate. Therefore, the learning coefficients of the AFC
+can be regarded as an estimate of the envelope of the disturbance, and the
+product of $\lambda$ and $|\Gp|$ plays the role of the gain of the estimator.
 
-For the AFC at 6.66~kHz in track following, the regression coefficient of
-$\vartheta$ on $D$ obtained by simulation is $0.64\angle{-10.6^\circ}$ when the
-mode at 6.66~kHz is applied as the disturbance; namely, the learning
-coefficients follow the envelope of the disturbance.
-
-Two points follow from this viewpoint. First, since the envelope is correlated
-over a time longer than a short seek, an estimate obtained before or during the
-seek is still useful after the seek. With the Switch scheme, however, the
-learning coefficients decay to 0.27 times in 0.84~ms as described above,
-although the correlation of the envelope over the same time is
-$\etad^{N} = 0.76$. Second, the gain of the estimator should be lowered when
-the measurement is less reliable, as in the Kalman filter. Note that a
-coefficient kept through the seek improves the compensation on average but not
-for every disturbance sequence, because the envelope changes randomly. The
-schemes are therefore compared statistically in Section~V.
+\subsection{Conventional Handling During Seek}
+During the seek and the settling, the AFCs are disconnected from the feedback
+loop so that they are not excited by the transient of the seek. Two schemes
+are available for handling the learning coefficients.
+\begin{itemize}
+\item \textit{Reset}: The learning coefficients are set to zero at the start of
+the seek, and the learning starts again at the mode transition.
+\item \textit{Switch}: The input of the AFC is switched off, i.e., $x(k) = 0$,
+during the seek and the settling, and the compensation signal is still
+applied. From \eqref{eq:afc_update}, the learning coefficients decay as
+\begin{equation}
+\thc(k) = \eta\,\thc(k-1). \label{eq:switch}
+\end{equation}
+\end{itemize}
+From the viewpoint of Section~II-C, two points follow. First, when the
+correlation time of the envelope is longer than the seek, an estimate obtained
+before or during the seek is still useful after the seek. However, the Reset
+scheme discards it, and with the Switch scheme the learning coefficients decay
+faster than the envelope decorrelates, because the damping of the AFC is
+usually chosen larger than that of the disturbance ($\zeta_a > \zeta_d$, i.e.,
+$\eta < \etad$) to obtain a sufficient bandwidth. As a result, the AFC has to
+learn the disturbance again after the mode transition. Second, the gain of the
+estimator should be lowered when the measurement is less reliable, as in the
+Kalman filter. Note that a coefficient kept through the seek improves the
+compensation on average but not for every disturbance sequence, because the
+envelope changes randomly. The schemes are therefore compared statistically in
+Section~IV.
 
 % ===========================================================================
 \section{Proposed Control Scheme}
 % ===========================================================================
 
 \subsection{Background AFC}
-During the seek, the PES is the sum of the response to the disturbance and the
-error caused by the difference between the controlled object and the nominal
-model. For the nominal model, the PES during the seek is zero without the
-disturbance. This means that the disturbance can be observed from the PES even
+Since the reference trajectory of the seek is calculated from the nominal
+model, the error signal during the seek is the sum of the response to the
+disturbance and the error caused by the difference between the plant and the
+nominal model. For the nominal model, the error signal during the seek is zero
+without the disturbance. This means that the disturbance can be observed even
 during the seek. One way to use this information is to keep the AFC in the
 feedback loop during the seek. In that case, however, the AFC also reacts to
-the transient caused by the model error and degrades the settling. In our
-simulation with the AFCs kept in the feedback loop during the seek, the
-settling time without disturbance for a 256-track seek increased from 0.773~ms
-to 1.438~ms, and the input of the PZT actuator for a 512-track seek reached
-53.9~nm in the LT case, which exceeds the limit of 50~nm in the benchmark
-problem.
+the transient caused by the model error and degrades the settling, as shown in
+Section~IV-D.
 
 To address this issue, the proposed control scheme separates the learning from
 the compensation during the seek. Fig.~\ref{fig:bg} shows the block diagram.
@@ -363,7 +298,7 @@ transferred as
 \thc(k_t-1) \leftarrow \thch(k_t-1), \label{eq:transfer}
 \end{equation}
 and the foreground AFC operates by \eqref{eq:afc_cout} and
-\eqref{eq:afc_update} from $k = k_t$ in track following.
+\eqref{eq:afc_update} from $k = k_t$.
 
 The second term on the right-hand side of \eqref{eq:xeff} is an input
 correction. Since only the compensation signal of the foreground AFC is applied
@@ -380,8 +315,6 @@ following are converted as
 \lambda_s = \lambda \left|\frac{G_f}{G_s}\right|, \qquad
 \theta_s = \theta - \arg\frac{G_f}{G_s}. \label{eq:conv}
 \end{equation}
-In the benchmark problem, the phase difference between $G_f$ and $G_s$ is up to
-approximately $40^\circ$.
 
 The proposed control scheme has the following feature. The compensation signal
 applied to the plant before the mode transition is identical to that of the
@@ -390,10 +323,10 @@ changed, and the difference from the Switch scheme arises only from the
 learning coefficients at the mode transition.
 
 \subsection{Design of Learning Gain During Seek}
-The PES during the seek contains the error caused by the model error in
-addition to the response to the disturbance. If the background AFC learns this
-error, the transferred coefficients disturb the response after the mode
-transition. From the viewpoint of Section~III, this error acts as measurement
+The error signal during the seek contains the error caused by the model error
+in addition to the response to the disturbance. If the background AFC learns
+this error, the transferred coefficients disturb the response after the mode
+transition. From the viewpoint of Section~II-C, this error acts as measurement
 noise on the estimate of the envelope, and the gain should be reduced
 according to the ratio of the noise to the signal. For this purpose, the gain
 $\gamma_s$ $(0 < \gamma_s \le 1)$ is introduced in \eqref{eq:bg}.
@@ -411,40 +344,105 @@ model with the disturbances. The gain is given by
 \nu = \frac{\max_{U} |Z_\mathrm{det}|^2}{\E\!\left[|Z_\mathrm{dist}|^2\right]},
 \qquad \gamma_s = \frac{1}{1+\nu}, \label{eq:gamma}
 \end{equation}
-where $U$ is a set of perturbed models of the controlled object. In this
-paper, $U$ consists of 12 models, namely the LT and HT cases and 10 models in
-which the resonance frequencies and the damping ratios of the VCM and the PZT
-actuator are varied, and the expectation is calculated from 200 disturbance
-sequences. The gain $\gamma_s$ is calculated offline for each AFC and each
-seek span. For a 64-track seek, $\gamma_s$ is 0.70 for the AFC at 6.66~kHz and
-0.49 for that at 5.85~kHz, whereas it is 0.05 and 0.007 for those at 3.3~kHz
-and 2.2~kHz, respectively. That is, the AFCs at the frequencies where the seek
-response is sensitive to the model error hardly learn during the seek and
-operate in almost the same way as the Switch scheme.
+where $U$ is a set of perturbed models of the plant. The gain $\gamma_s$ is
+calculated offline for each AFC and each seek span. For an AFC at a frequency
+where the seek response is sensitive to the model error, $\gamma_s$ becomes
+small, and the AFC operates in almost the same way as the Switch scheme.
 
 % ===========================================================================
-\section{Simulation Results}
+\section{Simulation Verification on HDD Benchmark Problem}
 % ===========================================================================
+
+\subsection{Head Positioning Control System of HDD}
+To verify the effectiveness of the proposed control scheme, it is applied to
+the HDD benchmark problem for track-seek control established by the committee
+of the IEEJ Industry Applications Society \cite{ieej_benchmark}.
+Fig.~\ref{fig:block} shows a block diagram of the head positioning control
+system. The control system employs a dual-stage actuator system composed of
+the VCM (subscript $V$) and the PZT actuator (subscript $P$), where $P_V$,
+$P_P$ and $C_V$, $C_P$ are the actuator models and the feedback controllers,
+respectively. The controllers are connected in the decoupled structure
+\cite{li2000,yabui2020}, in which the displacement of the PZT actuator
+estimated by the model $D_P \approx P_P$ is added to the input of the VCM
+controller. Here, $e(k)$ is the position error signal (PES), $y(k)$ is the
+head position, and the sampling time is $\Ts = 19.84~\mu$s. The benchmark
+problem provides three cases of the controlled object, namely the
+low-temperature (LT), room-temperature (RT), and high-temperature (HT) cases,
+in which the resonance frequencies and the damping ratios of the actuators
+vary.
+
+\begin{figure}[tb]
+\centering
+\includegraphics[width=\columnwidth]{figs/fig_block_control_system.pdf}
+\caption{Block diagram of the head positioning control system.
+\todo{draft from the simulation kit; to be replaced by the final drawing}}
+\label{fig:block}
+\end{figure}
+
+During the seek and the settling, the controllers $R_{s,P}$ and $R_{s,V}$ of
+the benchmark problem are used together with the feedforward inputs, and the
+reference trajectory is calculated from the nominal (RT) model. The mode
+transition is performed at 0.3~ms after the end of the reference trajectory.
+In track following, the disturbance-rejection filters $F_P$ and $F_V$ are
+connected by the switch $S$ in Fig.~\ref{fig:block}. They consist of 13
+resonant filters in total, which were designed by the loop-shaping method
+\cite{atsumi2026amc} under constraints on the gain of the sensitivity function
+and the closed-loop poles. Among them, 11 filters have small damping ratios
+($\zeta_a \le 0.05$) and are equivalent to the AFC in Section~II-B. The
+background AFC in Fig.~\ref{fig:bg} is applied independently to each of these
+11 AFCs in $F_P$ and $F_V$, where $x(k)$ is the input signal of each filter.
+
+Fig.~\ref{fig:sens} shows the gain of the sensitivity function in track
+following for the LT case with and without the disturbance-rejection filters.
+The vertical lines indicate the center frequencies of the AFCs. The filters
+lower the gain at the frequencies of the disturbances, whereas the maximum gain
+is almost unchanged: 5.99~dB without the filters and 6.13~dB with the filters.
+With these filters, the $3\sigma$ value of the PES in track following is
+4.45~nm in the worst case.
+
+\begin{figure}[tb]
+\centering
+\includegraphics[width=\columnwidth]{figs/fig_sensitivity_c1.pdf}
+\caption{Gain of the sensitivity function in track following (LT case).}
+\label{fig:sens}
+\end{figure}
+
+In the benchmark problem, the fan-induced vibration is modeled as the sum of
+13 second-order resonant modes from 2.2~kHz to 9.2~kHz, each of which is driven
+by white noise. The largest component is the mode at 6.66~kHz with a damping
+ratio of $\zeta_d = 0.008$, whose envelope has a correlation time of 3.0~ms.
+For the AFC at this frequency, the forgetting factor is $\eta = 0.9691$, and
+the learning coefficients decay to 0.27 times in 0.84~ms with the Switch
+scheme, whereas the correlation of the envelope over the same time is
+$\etad^{N_s} = 0.76$.
 
 \subsection{Simulation Conditions}
-To verify the effectiveness of the proposed control scheme, simulations were
-conducted using the HDD benchmark problem. The controlled object, the
-disturbances, and the evaluation of the benchmark problem were used without
-modification. The disturbances consist of the rotational vibration, the
-fan-induced vibration, and the repeatable runout. The feedforward input for
-the seek is the one based on the polynomial trajectory. Six seek spans from 4
-to 1024 tracks were evaluated for the LT, RT, and HT cases. A 128-track seek
-was also simulated; since its seek time and the time of the mode transition
-are the same as those of the 64-track seek with this feedforward input, the
-indices for the disturbances coincide with those of the 64-track seek, and it
-is omitted from the table of results. For each condition,
-1000 disturbance sequences were used, and the same sequences were applied to
-all the schemes. The disturbance sequences used for calculating $\gamma_s$
-are different from those for the evaluation.
+The controlled object, the disturbances, and the evaluation of the benchmark
+problem were used without modification. The disturbances consist of the
+rotational vibration, the fan-induced vibration, and the repeatable runout. The
+feedforward input for the seek is the one based on the polynomial trajectory.
+Six seek spans from 4 to 1024 tracks were evaluated for the LT, RT, and HT
+cases. A 128-track seek was also simulated; since its seek time and the time of
+the mode transition are the same as those of the 64-track seek with this
+feedforward input, the indices for the disturbances coincide with those of the
+64-track seek, and it is omitted from the table of results. For each
+condition, 1000 disturbance sequences were used, and the same sequences were
+applied to all the schemes. Four schemes were compared: the controller without
+the resonant filters for disturbance rejection (No filters), the Reset and
+Switch schemes in Section~II-D, and the Switch scheme with the background AFC
+(Proposed). The performance is evaluated by the settling time without
+disturbance, $t_\mathrm{hold}$, after which the PES stays within
+$\pm 0.1$~track, and, with the disturbances, by the $3\sigma$ value of the PES
+after the mode transition.
 
-Four schemes were compared: the controller without the resonant filters for
-disturbance rejection (No filters), the Reset and Switch schemes in
-Section~II-D, and the Switch scheme with the background AFC (Proposed).
+For the gain $\gamma_s$ in \eqref{eq:gamma}, $U$ consists of 12 models, namely
+the LT and HT cases and 10 models in which the resonance frequencies and the
+damping ratios of the VCM and the PZT actuator are varied, and the expectation
+is calculated from 200 disturbance sequences different from those for the
+evaluation. For a 64-track seek, $\gamma_s$ is 0.70 for the AFC at 6.66~kHz
+and 0.49 for that at 5.85~kHz, whereas it is 0.05 and 0.007 for those at
+3.3~kHz and 2.2~kHz, respectively. The phase difference between $G_f$ and $G_s$
+in \eqref{eq:conv} is up to approximately $40^\circ$.
 
 \subsection{PES After Mode Transition}
 \begin{figure}[tb]
@@ -536,6 +534,13 @@ AFC, which is close to the threshold of 0.1~track, and the transferred
 coefficients raise it to 0.1057~track. This shows that the transferred
 coefficients can still contain a small component learned from the error caused
 by the model error, and reducing it is left for future work.
+
+For comparison, when the AFCs are kept in the feedback loop during the seek,
+$t_\mathrm{hold}$ for the 256-track seek increases from 0.773~ms to 1.438~ms,
+and the input of the PZT actuator for the 512-track seek reaches 53.9~nm in the
+LT case, which exceeds the limit of 50~nm in the benchmark problem. This
+confirms the need to separate the learning from the compensation during the
+seek.
 
 % ===========================================================================
 \section{Conclusion}
