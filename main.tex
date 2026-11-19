@@ -263,23 +263,24 @@ To address this issue, the proposed control scheme separates the learning from
 the compensation during the seek. Fig.~\ref{fig:bg} shows the block diagram,
 where the disturbance-rejection filters other than the AFC under
 consideration are omitted; the feedback controller is the same as that in
-\cite{atsumi2026amc}. The AFC whose output is applied to the plant is referred to as the foreground
-AFC, and its copy that only learns is referred to as the background AFC. This
-configuration follows the two-filter structure used in echo cancellers, in
-which the adaptation is performed in a background filter and its coefficients
-are transferred to the foreground filter \cite{ochiai1977}.
+\cite{atsumi2026amc}. In addition to the AFC, whose output is applied to the
+plant, a copy of the AFC that only learns is introduced, which is referred to
+as the background AFC. This configuration follows the two-filter structure used
+in echo cancellers, in which the adaptation is performed in a background filter
+and its coefficients are transferred to the filter in the signal path
+\cite{ochiai1977}.
 
 \begin{figure}[tb]
 \centering
-\includegraphics[width=\columnwidth]{figs/fig_block_background_afc_nosf.pdf}
-\caption{Foreground AFC and background AFC during the seek and the coefficient
-transfer at the mode transition.}
+\includegraphics[width=\columnwidth]{figs/fig_block_proposed_afc.pdf}
+\caption{Block diagram of the proposed control scheme with the background AFC.}
 \label{fig:bg}
 \end{figure}
 
-During the seek and the settling, the foreground AFC is handled by the Switch
-scheme, i.e., its learning coefficients $\thc(k)$ follow \eqref{eq:switch}. The
-learning coefficients of the background AFC, $\thch(k)$, are updated by
+During the seek and the settling, the switch $S$ in Fig.~\ref{fig:bg} is open
+and $\bar{S}$ is closed. The AFC is handled by the Switch scheme, i.e., its
+learning coefficients $\thc(k)$ follow \eqref{eq:switch}. The learning
+coefficients of the background AFC, $\thch(k)$, are updated by
 \begin{align}
 x_\mathrm{eff}(k) &= x(k)
  + \re\{G_s(\thch(k-1) - \thc(k-1)) e^{j\Omega k}\}, \label{eq:xeff}\\
@@ -292,21 +293,21 @@ to its input during the seek, i.e., with the other disturbance-rejection
 filters disconnected. Let $k_0$ denote
 the sample at which the seek starts and $k_t = k_0 + N_s$ the sample of the
 mode transition. The background AFC starts from the learning coefficients of
-the foreground AFC, i.e., $\thch(k_0-1) = \thc(k_0-1)$, and is updated for
+the AFC, i.e., $\thch(k_0-1) = \thc(k_0-1)$, and is updated for
 $k_0 \le k \le k_t - 1$. At the mode transition, the coefficients are
 transferred as
 \begin{equation}
 \thc(k_t-1) \leftarrow \thch(k_t-1), \label{eq:transfer}
 \end{equation}
-and the foreground AFC operates by \eqref{eq:afc_cout} and
+and the AFC operates by \eqref{eq:afc_cout} and
 \eqref{eq:afc_update} from $k = k_t$.
 
 The second term on the right-hand side of \eqref{eq:xeff} is an input
-correction. Since only the compensation signal of the foreground AFC is applied
-to the plant, the correction adds the change that would appear in $x(k)$ if
+correction. Since only the compensation signal of the AFC is applied to the
+plant, the correction adds the change that would appear in $x(k)$ if
 that of the background AFC were applied instead. The background AFC therefore
 learns as if it were in the feedback loop, regardless of how the coefficients
-of the foreground AFC decay. This corresponds to the conditioning technique for
+of the AFC decay. This corresponds to the conditioning technique for
 bumpless transfer \cite{hanus1987}.
 
 Since $G_s$ differs from the frequency response in track following, $G_f$,
@@ -360,12 +361,11 @@ the HDD benchmark problem for track-seek control established by the committee
 of the IEEJ Industry Applications Society \cite{ieej_benchmark}.
 Fig.~\ref{fig:block} shows a block diagram of the head positioning control
 system. The control system employs a dual-stage actuator system composed of
-the VCM (subscript $V$) and the PZT actuator (subscript $P$), where $P_V$,
-$P_P$ and $C_V$, $C_P$ are the actuator models and the feedback controllers,
-respectively. The controllers are connected in the decoupled structure
-\cite{li2000,yabui2020}, in which the displacement of the PZT actuator
-estimated by the model $D_P \approx P_P$ is added to the input of the VCM
-controller. Here, $e(k)$ is the position error signal (PES), $y(k)$ is the
+the VCM (subscript $v$) and the PZT actuator (subscript $p$), where $P_v$,
+$P_p$ and $C_v$, $C_p$ are the actuator models and the feedback controllers,
+respectively. The controllers are designed based on the decoupled structure
+\cite{li2000,yabui2020}, whose decoupling path is omitted in
+Fig.~\ref{fig:block} for simplicity. Here, $e(k)$ is the position error signal (PES), $y(k)$ is the
 head position, and the sampling time is $\Ts = 19.84~\mu$s. The benchmark
 problem provides three cases of the controlled object, namely the
 low-temperature (LT), room-temperature (RT), and high-temperature (HT) cases,
@@ -374,26 +374,26 @@ vary.
 
 \begin{figure}[tb]
 \centering
-\includegraphics[width=\columnwidth]{figs/fig_block_control_system_nosf.pdf}
+\includegraphics[width=\columnwidth]{figs/fig_block_hdd_seek.pdf}
 \caption{Block diagram of the head positioning control system.}
 \label{fig:block}
 \end{figure}
 
-During the seek and the settling, the same controllers $C_P$ and $C_V$ are
+During the seek and the settling, the same controllers $C_p$ and $C_v$ are
 used without the disturbance-rejection filters, together with the feedforward
-inputs, and the reference trajectory is calculated from the nominal (RT) model. The mode
-transition is performed at 0.3~ms after the end of the reference trajectory.
-In track following, the disturbance-rejection filters $F_P$ and $F_V$ are
-connected by the switch $S$ in Fig.~\ref{fig:block}. They consist of two
-loop-shaping filters (4.22~kHz and 12.02~kHz) and 11 AFCs for the disturbance
-rejection, which are the target of this paper, designed by the loop-shaping
-method \cite{atsumi2026amc}. Since the AFC in Section~II-B can be equivalently
+inputs $u_{p,\mathrm{ff}}$ and $u_{v,\mathrm{ff}}$, and the reference trajectory
+is calculated from the nominal (RT) model. The mode transition is performed at
+0.3~ms after the end of the reference trajectory. In track following, the
+disturbance-rejection filters are connected by the switches $S$ in
+Fig.~\ref{fig:block}. They consist of 11 AFCs, which are the target of this
+paper, and one resonant filter for loop shaping in each path (12.02~kHz for
+the PZT actuator and 4.22~kHz for the VCM), designed by the loop-shaping method
+\cite{atsumi2026amc}. Since the AFC in Section~II-B can be equivalently
 converted into a transfer function, i.e., a resonant filter
 \cite{messner1995,yabui2013}, its effect on the feedback loop can be
 evaluated in the frequency domain, e.g., by the sensitivity function
 \cite{yabui2024access}. The background AFC in Fig.~\ref{fig:bg} is applied
-independently to each of the 11 AFCs, where $x(k)$ is the input signal of each
-AFC in $F_P$ or $F_V$.
+independently to each of the 11 AFCs.
 
 Fig.~\ref{fig:sens} shows the gain of the sensitivity function in track
 following for the LT case with and without the disturbance-rejection filters.
@@ -527,7 +527,7 @@ Seek span [track] & 4 & 16 & 64 & 128 & 256 & 512 & 1024 \\
 No filters & 8.32 & 9.39 & 9.51 & 11.08 & 8.53 & 9.05 & 9.03 \\
 Reset      & 6.66 & 7.20 & 7.38 & 8.77 & 6.50 & 6.71 & 6.93 \\
 Switch     & 6.09 & 6.69 & 7.04 & 8.51 & 6.05 & 6.29 & 6.53 \\
-Proposed   & \textbf{5.83} & \textbf{6.53} & \textbf{6.74} & \textbf{8.26} & \textbf{5.79} & \textbf{6.06} & \textbf{6.24} \\
+Proposed   & \textbf{5.82} & \textbf{6.52} & \textbf{6.74} & \textbf{8.27} & \textbf{5.79} & \textbf{6.06} & \textbf{6.25} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -538,7 +538,7 @@ transition. Each value is the worst one among the LT, RT, and HT cases. The
 proposed control
 scheme gives the smallest value for all the seek spans. Compared with the
 Reset scheme and the Switch scheme, the $3\sigma$ value is reduced by 6--13\%
-and 2--4\%, respectively.
+and 3--5\%, respectively.
 
 Note that the proposed control scheme and the Switch scheme apply the same
 compensation signal before the mode transition. Therefore, the difference
@@ -570,7 +570,7 @@ during the seek is identical to that of the conventional Switch scheme.
 Simulation results on the HDD benchmark problem with 1000 disturbance
 sequences show that the proposed control scheme reduces the $3\sigma$ value of
 the PES for 1~ms after the mode transition by up to 13\% compared with the
-Reset scheme and by up to 4\% compared with the Switch scheme, and the effect
+Reset scheme and by up to 5\% compared with the Switch scheme, and the effect
 appears in approximately 1~ms after the mode transition. Future work will focus on the online adjustment of the learning
 gain during the seek, the use of a disturbance model for the compensation
 signal during the seek, and experimental verification.
