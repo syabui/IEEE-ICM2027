@@ -33,8 +33,8 @@
 
 \begin{document}
 
-\title{Background Adaptive Feedforward Cancellation for Fan-Induced Vibration
-After Track Seek in Hard Disk Drives}
+\title{Improvement of Transient Response Adaptive Feedforward Cancellation
+for Fan-Induced Vibration After Track Seek in Hard Disk Drive}
 
 \author{\IEEEauthorblockN{Shota Yabui}
 \IEEEauthorblockA{\textit{Dept. of Mech. Systems Eng.} \\
@@ -161,9 +161,9 @@ u(k) &= p(k-1)\cos(\Omega k) + q(k-1)\sin(\Omega k), \label{eq:afc_out}\\
 p(k) &= \eta\, p(k-1) + \lambda\, x(k)\cos(\Omega k + \theta), \label{eq:afc_p}\\
 q(k) &= \eta\, q(k-1) + \lambda\, x(k)\sin(\Omega k + \theta). \label{eq:afc_q}
 \end{align}
-Here, $u(k)$ is the compensation signal, $\Omega = \omega_0 \Ts$, and $x(k)$
-is the input of the AFC, i.e., the signal generated from $e(k)$ at the point
-of the feedback controller where the AFC is placed. The learning coefficients
+Here, $u(k)$ is the compensation signal, which is added to the input of the
+feedback controller, $\Omega = \omega_0 \Ts$, and $x(k) = e(k)$ is the input
+of the AFC. The learning coefficients
 $p(k)$ and $q(k)$ are updated at every sample, and the compensation signal at
 sample $k$ is calculated from the coefficients obtained at the previous
 sample. The parameters $\lambda$ and $\theta$ are the step size and the phase,
@@ -273,7 +273,9 @@ and its coefficients are transferred to the filter in the signal path
 \begin{figure}[tb]
 \centering
 \includegraphics[width=\columnwidth]{figs/fig_block_proposed_afc.pdf}
-\caption{Block diagram of the proposed control scheme with the background AFC.}
+\caption{Block diagram of the proposed control scheme with the background AFC.
+$S$ is closed in track following, and $\bar{S}$ is closed during the seek
+($k_0 \le k < k_t$).}
 \label{fig:bg}
 \end{figure}
 
@@ -384,8 +386,9 @@ used without the disturbance-rejection filters, together with the feedforward
 inputs $u_{p,\mathrm{ff}}$ and $u_{v,\mathrm{ff}}$, and the reference trajectory
 is calculated from the nominal (RT) model. The mode transition is performed at
 0.3~ms after the end of the reference trajectory. In track following, the
-disturbance-rejection filters are connected by the switches $S$ in
-Fig.~\ref{fig:block}. They consist of 11 AFCs, which are the target of this
+disturbance-rejection filters, which take $e(k)$ as the input, are connected by
+the switches $S$ in Fig.~\ref{fig:block}, and their outputs are added to the
+inputs of $C_p$ and $C_v$. They consist of 11 AFCs, which are the target of this
 paper, and one resonant filter for loop shaping in each path (12.02~kHz for
 the PZT actuator and 4.22~kHz for the VCM), designed by the loop-shaping method
 \cite{atsumi2026amc}. Since the AFC in Section~II-B can be equivalently
